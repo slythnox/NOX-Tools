@@ -9,7 +9,9 @@ const ALL_ICON_NAMES: string[] = Object.keys(LucideIcons).filter(
     name !== 'createLucideIcon' &&
     !name.endsWith('Icon') &&
     /^[A-Z]/.test(name) &&
-    typeof (LucideIcons as Record<string, unknown>)[name] === 'function'
+    ((LucideIcons as Record<string, unknown>)[name] !== null &&
+      (typeof (LucideIcons as Record<string, unknown>)[name] === 'object' ||
+       typeof (LucideIcons as Record<string, unknown>)[name] === 'function'))
 );
 
 const ICON_CATEGORIES: Record<string, string[]> = {
@@ -128,7 +130,10 @@ export default function IconMaker() {
         : ICON_CATEGORIES[selectedCategory] ?? ALL_ICON_NAMES;
     // Only keep icons that actually exist in lucide exports
     return pool
-      .filter((n) => typeof (LucideIcons as Record<string, unknown>)[n] === 'function')
+      .filter((n) => {
+        const val = (LucideIcons as Record<string, unknown>)[n];
+        return val !== null && (typeof val === 'object' || typeof val === 'function');
+      })
       .slice(0, 200);
   }, [searchTerm, selectedCategory]);
 
