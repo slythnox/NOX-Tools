@@ -41,14 +41,15 @@
 <table width="100%" style="border-collapse: collapse; border: 1px solid #27272a; font-family: 'Inter', sans-serif; background: #09090b;">
   <thead>
     <tr style="background: #18181b; border-bottom: 1px solid #27272a;">
-      <th align="left" width="33%" style="padding: 12px; color: #7c3aed; font-size: 1rem;">Code Snippet Generator</th>
-      <th align="left" width="33%" style="padding: 12px; color: #db2777; font-size: 1rem;">Lucide Icon Customizer</th>
-      <th align="left" width="33%" style="padding: 12px; color: #059669; font-size: 1rem;">OKLCH Color Architect</th>
+      <th align="left" width="25%" style="padding: 12px; color: #7c3aed; font-size: 0.95rem;">Code Snippet Generator</th>
+      <th align="left" width="25%" style="padding: 12px; color: #db2777; font-size: 0.95rem;">Lucide Icon Customizer</th>
+      <th align="left" width="25%" style="padding: 12px; color: #059669; font-size: 0.95rem;">OKLCH Color Architect</th>
+      <th align="left" width="25%" style="padding: 12px; color: #3b82f6; font-size: 0.95rem;">WebGL Background Studio</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td valign="top" style="padding: 16px; border-right: 1px solid #27272a; line-height: 1.6; color: #d4d4d8; font-size: 0.9rem;">
+      <td valign="top" style="padding: 16px; border-right: 1px solid #27272a; line-height: 1.6; color: #d4d4d8; font-size: 0.85rem;">
         Paste source code and format it into professional visual captures. Features direct text editing inside the layout block.
         <br /><br />
         <strong>Capabilities:</strong>
@@ -56,31 +57,42 @@
           <li>6 built-in IDE syntax themes</li>
           <li>6 designer gradient layouts</li>
           <li>Retina-ready 2x PNG rendering</li>
-          <li>Toggleable Mac-style window headers</li>
-          <li>Copy to clipboard or direct download</li>
+          <li>Mac-style window headers</li>
+          <li>Copy to clipboard / download</li>
         </ul>
       </td>
-      <td valign="top" style="padding: 16px; border-right: 1px solid #27272a; line-height: 1.6; color: #d4d4d8; font-size: 0.9rem;">
+      <td valign="top" style="padding: 16px; border-right: 1px solid #27272a; line-height: 1.6; color: #d4d4d8; font-size: 0.85rem;">
         Search and configure customizable vector icons locally. Built to export customized icon packages.
         <br /><br />
         <strong>Capabilities:</strong>
         <ul>
           <li>Full index of 1,400+ Lucide icons</li>
           <li>8 quick-filter category sections</li>
-          <li>Adjustable stroke width and sizing</li>
-          <li>Color selections for icon and backgrounds</li>
-          <li>Single-click asset export to clipboard/PNG</li>
+          <li>Adjustable stroke width / sizing</li>
+          <li>Custom background colors</li>
+          <li>Export to clipboard / PNG</li>
         </ul>
       </td>
-      <td valign="top" style="padding: 16px; line-height: 1.6; color: #d4d4d8; font-size: 0.9rem;">
+      <td valign="top" style="padding: 16px; border-right: 1px solid #27272a; line-height: 1.6; color: #d4d4d8; font-size: 0.85rem;">
         Construct perceptually-uniform color systems based on the modern OKLCH color space.
         <br /><br />
         <strong>Capabilities:</strong>
         <ul>
           <li>Hue and saturation adjustment loops</li>
           <li>14 generated semantic tokens</li>
-          <li>CSS custom variables clipboard copy</li>
-          <li>Live design previews including contrast metrics, border styling, gradients, and shadows</li>
+          <li>CSS variables clipboard copy</li>
+          <li>Contrast previews, shadows & gradients</li>
+        </ul>
+      </td>
+      <td valign="top" style="padding: 16px; line-height: 1.6; color: #d4d4d8; font-size: 0.85rem;">
+        Design, customize, and export interactive WebGL/HTML5 animated backgrounds.
+        <br /><br />
+        <strong>Capabilities:</strong>
+        <ul>
+          <li>7 visual presets (Laser Flow, Light Rays, Floating Lines, Color Bends, Blinds, Dot Field, Particle Burst)</li>
+          <li>Full parameter setting control panels</li>
+          <li>Dynamic CLI copy / component usage codes</li>
+          <li>Source code (.tsx) & style (.css) exports</li>
         </ul>
       </td>
     </tr>
@@ -109,6 +121,11 @@
       <td style="padding: 10px; color: #a1a1aa; font-weight: bold;">Bundler</td>
       <td style="padding: 10px; color: #ffffff;">Vite 5</td>
       <td style="padding: 10px; color: #a1a1aa;">Production asset packaging and hot development reload</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #27272a;">
+      <td style="padding: 10px; color: #a1a1aa; font-weight: bold;">Graphics Engine</td>
+      <td style="padding: 10px; color: #ffffff;">Three.js & OGL</td>
+      <td style="padding: 10px; color: #a1a1aa;">Accelerated WebGL/Shaders for premium background animations</td>
     </tr>
     <tr style="border-bottom: 1px solid #27272a;">
       <td style="padding: 10px; color: #a1a1aa; font-weight: bold;">Styling</td>
