@@ -8,6 +8,11 @@ import { AnimatedList } from '@/components/ui/AnimatedList';
 import ScrollStack, { ScrollStackItem } from '@/components/ui/ScrollStack';
 import BubbleMenu from '@/components/ui/BubbleMenu';
 import MagicBento from '@/components/ui/MagicBento';
+import TerminalCard from '@/components/ui/TerminalCard';
+import SparkleButton from '@/components/ui/SparkleButton';
+import JapaneseMatrix from '@/components/ui/JapaneseMatrix';
+import BackToTop from '@/components/ui/BackToTop';
+import GlassAppButtons from '@/components/ui/GlassAppButtons';
 
 // TYPES
 type ComponentTab = 'preview' | 'code';
@@ -82,6 +87,36 @@ const COMPONENTS: ComponentConfig[] = [
       { id: 'particleCount', label: 'Particle Count', type: 'slider', default: 12, min: 4, max: 32, step: 2 },
       { id: 'glowColor', label: 'Glow Color Accent', type: 'color', default: '#8400ff' }
     ]
+  },
+  {
+    id: 'terminal-card',
+    name: 'Terminal Card',
+    description: 'A mock Linux bash terminal window layout widget.',
+    controls: []
+  },
+  {
+    id: 'sparkle-button',
+    name: 'Sparkle Button',
+    description: 'A button with sparkling particles and micro-animations.',
+    controls: []
+  },
+  {
+    id: 'japanese-matrix',
+    name: 'Matrix Rain',
+    description: 'Falling digital rain made of random Japanese characters.',
+    controls: []
+  },
+  {
+    id: 'back-to-top',
+    name: 'Back to Top',
+    description: 'An expandable pill-to-circle layout button.',
+    controls: []
+  },
+  {
+    id: 'glass-app-buttons',
+    name: 'Glass App Buttons',
+    description: 'Neo-glassmorphic app button selectors with hovering gradient highlights.',
+    controls: []
   }
 ];
 
@@ -243,6 +278,61 @@ export default function Demo() {
       particleCount={${controlValues.particleCount ?? 12}}
       glowColor="${hexToRgbStr(controlValues.glowColor || '#8400ff')}"
     />
+  );
+}`;
+
+        case 'terminal-card':
+          return `import TerminalCard from './TerminalCard';
+
+export default function Demo() {
+  return (
+    <div className="flex items-center justify-center min-h-[300px] bg-black">
+      <TerminalCard />
+    </div>
+  );
+}`;
+
+        case 'sparkle-button':
+          return `import SparkleButton from './SparkleButton';
+
+export default function Demo() {
+  return (
+    <div className="flex items-center justify-center min-h-[150px]">
+      <SparkleButton />
+    </div>
+  );
+}`;
+
+        case 'japanese-matrix':
+          return `import JapaneseMatrix from './JapaneseMatrix';
+
+export default function Demo() {
+  return (
+    <div className="w-full max-w-md mx-auto">
+      <JapaneseMatrix />
+    </div>
+  );
+}`;
+
+        case 'back-to-top':
+          return `import BackToTop from './BackToTop';
+
+export default function Demo() {
+  return (
+    <div className="flex items-center justify-center min-h-[150px]">
+      <BackToTop />
+    </div>
+  );
+}`;
+
+        case 'glass-app-buttons':
+          return `import GlassAppButtons from './GlassAppButtons';
+
+export default function Demo() {
+  return (
+    <div className="flex items-center justify-center min-h-[150px] bg-black">
+      <GlassAppButtons />
+    </div>
   );
 }`;
       }
@@ -858,6 +948,497 @@ export default function Demo() {
   position: relative;
   user-select: none;
 }`;
+
+        case 'terminal-card':
+          return `.terminal-container {
+  width: 250px;
+  height: 250px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.terminal_toolbar {
+  display: flex;
+  height: 30px;
+  align-items: center;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  background: #212121;
+  justify-content: space-between;
+}
+
+.butt {
+  display: flex;
+  align-items: center;
+}
+
+.btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  margin-right: 5px;
+  font-size: 8px;
+  height: 12px;
+  width: 12px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 100%;
+  background: linear-gradient(#7d7871 0%, #595953 100%);
+  text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.2);
+  box-shadow: 0px 0px 1px 0px #41403A, 0px 1px 1px 0px #474642;
+}
+
+.btn-color {
+  background: #ee411a;
+}
+
+.btn:hover {
+  cursor: pointer;
+}
+
+.btn:focus {
+  outline: none;
+}
+
+.add_tab {
+  border: 1px solid #fff;
+  color: #fff;
+  padding: 0 6px;
+  border-radius: 4px 4px 0 0;
+  border-bottom: none;
+  cursor: pointer;
+}
+
+.user {
+  color: #d5d0ce;
+  margin-left: 6px;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.terminal_body {
+  background: rgba(0, 0, 0, 0.85);
+  height: calc(100% - 30px);
+  padding: 10px;
+  margin-top: -1px;
+  font-size: 12px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  font-family: monospace;
+}
+
+.terminal_promt {
+  display: flex;
+  align-items: center;
+}
+
+.terminal_promt span {
+  margin-left: 4px;
+}
+
+.terminal_user {
+  color: #1eff8e;
+}
+
+.terminal_location {
+  color: #4878c0;
+}
+
+.terminal_bling {
+  color: #dddddd;
+}
+
+.terminal_cursor {
+  display: block;
+  height: 14px;
+  width: 5px;
+  margin-left: 10px;
+  animation: curbl 1200ms linear infinite;
+}
+
+@keyframes curbl {
+  0% { background: #ffffff; }
+  49% { background: #ffffff; }
+  50% { background: transparent; }
+  99% { background: transparent; }
+  100% { background: #ffffff; }
+}`;
+
+        case 'sparkle-button':
+          return `.sparkle-button {
+  --active: 0;
+  --bg: radial-gradient(
+      40% 50% at center 100%,
+      hsl(270 calc(var(--active) * 97%) 72% / var(--active)),
+      transparent
+    ),
+    radial-gradient(
+      80% 100% at center 120%,
+      hsl(260 calc(var(--active) * 97%) 70% / var(--active)),
+      transparent
+    ),
+    hsl(260 calc(var(--active) * 97%) calc((var(--active) * 44%) + 12%));
+  background: var(--bg);
+  font-size: 1.2rem;
+  font-weight: 500;
+  border: 0;
+  cursor: pointer;
+  padding: 1em 2em;
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  white-space: nowrap;
+  border-radius: 100px;
+  position: relative;
+  box-shadow: 0 0 calc(var(--active) * 3em) calc(var(--active) * 1em) hsl(260 97% 61% / 0.75),
+    0 0em 0 0 hsl(260 calc(var(--active) * 97%) calc((var(--active) * 50%) + 30%)) inset,
+    0 -0.05em 0 0 hsl(260 calc(var(--active) * 97%) calc(var(--active) * 60%)) inset;
+  transition: box-shadow 0.3s, scale 0.3s, background 0.3s;
+  scale: calc(1 + (var(--active) * 0.1));
+}
+
+.sparkle-button:active {
+  scale: 1;
+  transition: .3s;
+}
+
+.sparkle path {
+  color: hsl(0 0% calc((var(--active, 0) * 70%) + var(--base)));
+  transform-box: fill-box;
+  transform-origin: center;
+  fill: currentColor;
+  stroke: currentColor;
+  animation-delay: calc((0.3s * 1.5) + (var(--delay) * 1s));
+  animation-duration: 0.6s;
+  transition: color 0.3s;
+}
+
+.sparkle-button:is(:hover, :focus-visible) path {
+  animation-name: bounce;
+}
+
+@keyframes bounce {
+  35%, 65% {
+    scale: var(--scale);
+  }
+}
+
+.sparkle path:nth-of-type(1) {
+  --scale: 0.5;
+  --delay: 0.1;
+  --base: 40%;
+}
+
+.sparkle path:nth-of-type(2) {
+  --scale: 1.5;
+  --delay: 0.2;
+  --base: 20%;
+}
+
+.sparkle path:nth-of-type(3) {
+  --scale: 2.5;
+  --delay: 0.35;
+  --base: 30%;
+}
+
+.sparkle-button:before {
+  content: "";
+  position: absolute;
+  inset: -0.2em;
+  z-index: -1;
+  border: 0.25em solid hsl(260 97% 50% / 0.5);
+  border-radius: 100px;
+  opacity: var(--active, 0);
+  transition: opacity 0.3s;
+}
+
+.spark {
+  position: absolute;
+  inset: 0;
+  border-radius: 100px;
+  rotate: 0deg;
+  overflow: hidden;
+  mask: linear-gradient(white, transparent 50%);
+  animation: flip calc(var(--spark, 1s) * 2) infinite steps(2, end);
+}
+
+@keyframes flip {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.spark:before {
+  content: "";
+  position: absolute;
+  width: 200%;
+  aspect-ratio: 1;
+  top: 0%;
+  left: 50%;
+  z-index: -1;
+  translate: -50% -15%;
+  rotate: 0;
+  transform: rotate(-90deg);
+  opacity: calc((var(--active)) + 0.4);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 340deg,
+    white 360deg
+  );
+  transition: opacity 0.3s;
+  animation: rotate var(--spark, 1s) linear infinite both;
+}
+
+.spark:after {
+  content: "";
+  position: absolute;
+  inset: var(--cut, 1px);
+  border-radius: 100px;
+}
+
+.backdrop {
+  position: absolute;
+  inset: var(--cut, 1px);
+  background: var(--bg);
+  border-radius: 100px;
+  transition: background 0.3s;
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(90deg);
+  }
+}
+
+.sparkle-button:is(:hover, :focus-visible) ~ :is(.bodydrop, .particle-pen) {
+  --active: 1;
+  --play-state: running;
+}
+
+.sparkle-button:is(:hover, :focus-visible) {
+  --active: 1;
+  --play-state: running;
+}
+
+.sp {
+  position: relative;
+}
+
+.particle-pen {
+  position: absolute;
+  width: 200%;
+  aspect-ratio: 1;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  -webkit-mask: radial-gradient(white, transparent 65%);
+  z-index: -1;
+  opacity: var(--active, 0);
+  transition: opacity 0.3s;
+}
+
+.particle {
+  fill: white;
+  width: calc(var(--size, 0.25) * 1rem);
+  aspect-ratio: 1;
+  position: absolute;
+  top: calc(var(--y) * 1%);
+  left: calc(var(--x) * 1%);
+  opacity: var(--alpha, 1);
+  animation: float-out calc(var(--duration, 1) * 1s) calc(var(--delay) * -1s) infinite linear;
+  transform-origin: var(--origin-x, 1000%) var(--origin-y, 1000%);
+  z-index: -1;
+  animation-play-state: var(--play-state, paused);
+}
+
+.particle path {
+  fill: hsl(0 0% 90%);
+  stroke: none;
+}
+
+.particle:nth-of-type(even) {
+  animation-direction: reverse;
+}
+
+@keyframes float-out {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.text {
+  translate: 2% -6%;
+  letter-spacing: 0.01ch;
+  background: linear-gradient(90deg, hsl(0 0% calc((var(--active) * 100%) + 65%)), hsl(0 0% calc((var(--active) * 100%) + 26%)));
+  -webkit-background-clip: text;
+  color: transparent;
+  transition: background 0.3s;
+}
+
+.sparkle-button svg {
+  inline-size: 1.25em;
+  translate: -25% -5%;
+}`;
+
+        case 'japanese-matrix':
+          return `.jp-matrix-wrapper {
+  width: 100%;
+  height: 300px;
+  background-color: #05050a;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #111;
+}
+
+.jp-matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+  grid-auto-rows: 24px;
+  width: 100%;
+  height: 100%;
+  font-size: 14px;
+  color: rgba(0, 150, 255, 0.4);
+  font-family: "Courier New", Courier, monospace;
+  justify-content: center;
+  align-content: center;
+  user-select: none;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.jp-matrix > span {
+  text-align: center;
+  text-shadow: 0 0 5px rgba(0, 150, 255, 0.5);
+  transition: color 0.5s, text-shadow 0.5s;
+  line-height: 1;
+}
+
+.jp-matrix > span:nth-child(19n + 2) {
+  animation: smooth-pulse 3.5s ease-in-out infinite 0.2s;
+}
+.jp-matrix > span:nth-child(29n + 1) {
+  animation: smooth-pulse 4.1s ease-in-out infinite 0.7s;
+}
+.jp-matrix > span:nth-child(11n) {
+  color: rgba(100, 200, 255, 0.7);
+  animation: smooth-pulse 2.9s ease-in-out infinite 1.1s;
+}
+.jp-matrix > span:nth-child(37n + 10) {
+  animation: smooth-pulse 5.3s ease-in-out infinite 1.5s;
+}
+.jp-matrix > span:nth-child(41n + 1) {
+  animation: smooth-pulse 3.9s ease-in-out infinite 0.4s;
+}
+.jp-matrix > span:nth-child(17n + 9) {
+  animation: smooth-pulse 2.8s ease-in-out infinite 0.9s;
+}
+.jp-matrix > span:nth-child(23n + 18) {
+  animation: smooth-pulse 4.3s ease-in-out infinite 1.3s;
+}
+.jp-matrix > span:nth-child(31n + 4) {
+  animation: smooth-pulse 5.6s ease-in-out infinite 0.1s;
+}
+.jp-matrix > span:nth-child(43n + 20) {
+  animation: smooth-pulse 3.6s ease-in-out infinite 1.8s;
+}
+.jp-matrix > span:nth-child(13n + 6) {
+  animation: smooth-pulse 3.2s ease-in-out infinite 1.2s;
+}
+.jp-matrix > span:nth-child(53n + 5) {
+  animation: smooth-pulse 4.9s ease-in-out infinite 0.5s;
+}
+.jp-matrix > span:nth-child(47n + 15) {
+  animation: smooth-pulse 5.9s ease-in-out infinite 1s;
+}
+
+@keyframes smooth-pulse {
+  0%,
+  100% {
+    color: rgba(0, 150, 255, 0.4);
+    text-shadow: 0 0 5px rgba(0, 150, 255, 0.5);
+  }
+  30% {
+    color: rgba(100, 200, 255, 1);
+    text-shadow:
+      0 0 10px rgba(100, 200, 255, 1),
+      0 0 15px rgba(100, 200, 255, 1);
+  }
+  50% {
+    color: rgba(255, 105, 180, 1);
+    text-shadow:
+      0 0 10px rgba(255, 105, 180, 1),
+      0 0 15px rgba(255, 105, 180, 1);
+  }
+  70% {
+    color: #ffffff;
+    text-shadow:
+      0 0 10px #fff,
+      0 0 15px #fff,
+      0 0 20px #fff;
+  }
+}`;
+
+        case 'back-to-top':
+          return `.back-to-top-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: rgb(20, 20, 20);
+  border: none;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 0px 0px 4px rgba(180, 160, 255, 0.253);
+  cursor: pointer;
+  transition-duration: 0.3s;
+  overflow: hidden;
+  position: relative;
+}
+
+.svgIcon {
+  width: 12px;
+  transition-duration: 0.3s;
+}
+
+.svgIcon path {
+  fill: white;
+}
+
+.back-to-top-button:hover {
+  width: 140px;
+  border-radius: 50px;
+  transition-duration: 0.3s;
+  background-color: rgb(181, 160, 255);
+  align-items: center;
+}
+
+.back-to-top-button:hover .svgIcon {
+  transition-duration: 0.3s;
+  transform: translateY(-200%);
+}
+
+.back-to-top-button::before {
+  position: absolute;
+  bottom: -20px;
+  content: "Back to Top";
+  color: white;
+  font-size: 0px;
+  font-family: monospace;
+}
+
+.back-to-top-button:hover::before {
+  font-size: 13px;
+  opacity: 1;
+  bottom: unset;
+  transition-duration: 0.3s;
+}`;
+
+        case 'glass-app-buttons':
+          return `/* This component is fully styled using utility classes from Tailwind CSS. No additional CSS stylesheets are required. */`;
       }
     }
 
@@ -1684,7 +2265,7 @@ const updateCardGlowProperties = (card: HTMLElement, mouseX: number, mouseY: num
   const relativeX = ((mouseX - rect.left) / rect.width) * 100;
   const relativeY = ((mouseY - rect.top) / rect.height) * 100;
 
-  card.style.setProperty('--glow-x', \`\${relativeX}%\`);
+  card.style.setProperty('--glow-x', \`\${relativeX}%\blank\`);
   card.style.setProperty('--glow-y', \`\${relativeY}%\`);
   card.style.setProperty('--glow-intensity', glow.toString());
   card.style.setProperty('--glow-radius', \`\${radius}px\`);
@@ -2292,6 +2873,151 @@ export const MagicBento: React.FC<BentoProps> = ({
 
 export default MagicBento;`;
 
+      case 'terminal-card':
+        return `import React from 'react';
+import './TerminalCard.css';
+
+export const TerminalCard: React.FC = () => {
+  return (
+    <div className="terminal-container">
+      <div className="terminal_toolbar">
+        <div className="butt">
+          <button className="btn btn-color" />
+          <button className="btn" />
+          <button className="btn" />
+        </div>
+        <p className="user">johndoe@admin: ~</p>
+        <div className="add_tab">+</div>
+      </div>
+      <div className="terminal_body">
+        <div className="terminal_promt">
+          <span className="terminal_user">johndoe@admin:</span>
+          <span className="terminal_location">~</span>
+          <span className="terminal_bling">$</span>
+          <span className="terminal_cursor" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TerminalCard;`;
+
+      case 'sparkle-button':
+        return `import React from 'react';
+import './SparkleButton.css';
+
+export const SparkleButton: React.FC = () => {
+  return (
+    <div className="sp">
+      <button className="sparkle-button">
+        <span className="spark" />
+        <span className="backdrop" />
+        <svg className="sparkle" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14.187 8.096L15 5.25L15.813 8.096C16.0231 8.83114 16.4171 9.50062 16.9577 10.0413C17.4984 10.5819 18.1679 10.9759 18.903 11.186L21.75 12L18.904 12.813C18.1689 13.0231 17.4994 13.4171 16.9587 13.9577C16.4181 14.4984 16.0241 15.1679 15.814 15.903L15 18.75L14.187 15.904C13.9769 15.1689 13.5829 14.4994 13.0423 13.9587C12.5016 13.4181 11.8321 13.0241 11.097 12.814L8.25 12L11.096 11.187C11.8311 10.9769 12.5006 10.5829 13.0413 10.0423C13.5819 9.50162 13.9759 8.83214 14.186 8.097L14.187 8.096Z" fill="black" stroke="black" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6 14.25L5.741 15.285C5.59267 15.8785 5.28579 16.4206 4.85319 16.8532C4.42059 17.2858 3.87853 17.5927 3.285 17.741L2.25 18L3.285 18.259C3.87853 18.4073 4.42059 18.7142 4.85319 19.1468C5.28579 19.5794 5.59267 20.1215 5.741 20.715L6 21.75L6.259 20.715C6.40725 20.1216 6.71398 19.5796 7.14639 19.147C7.5788 18.7144 8.12065 18.4075 8.714 18.259L9.75 18L8.714 17.741C8.12065 17.5925 7.5788 17.2856 7.14639 16.853C6.71398 16.4204 6.40725 15.8784 6.259 15.285L6 14.25Z" fill="black" stroke="black" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6.5 4L6.303 4.5915C6.24777 4.75718 6.15472 4.90774 6.03123 5.03123C5.90774 5.15472 5.75718 5.24777 5.5915 5.303L5 5.5L5.5915 5.697C5.75718 5.75223 5.90774 5.84528 6.03123 5.96877C6.15472 6.09226 6.24777 6.24282 6.303 6.4085L6.5 7L6.697 6.4085C6.75223 6.24282 6.84528 6.09226 6.96877 5.96877C7.09226 5.84528 7.24282 5.75223 7.4085 5.697L8 5.5L7.4085 5.303C7.24282 5.24777 7.09226 5.15472 6.96877 5.03123C6.84528 4.90774 6.75223 4.75718 6.697 4.5915L6.5 4Z" fill="black" stroke="black" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span className="text">Generate Site</span>
+      </button>
+      <div className="bodydrop" />
+      <span aria-hidden="true" className="particle-pen">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <svg
+            key={i}
+            className="particle"
+            viewBox="0 0 15 15"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{
+              '--x': Math.random() * 100,
+              '--y': Math.random() * 100,
+              '--delay': Math.random() * -10,
+              '--duration': 2 + Math.random() * 4,
+              '--size': 0.1 + Math.random() * 0.35,
+              '--alpha': 0.3 + Math.random() * 0.7
+            } as React.CSSProperties}
+          >
+            <path d="M6.937 3.846L7.75 1L8.563 3.846C8.77313 4.58114 9.1671 5.25062 9.70774 5.79126C10.2484 6.3319 10.9179 6.72587 11.653 6.936L14.5 7.75L11.654 8.563C10.9189 8.77313 10.2494 9.1671 9.70874 9.70774C9.1681 10.2484 8.77413 10.9179 8.564 11.653L7.75 14.5L6.937 11.654C6.72687 10.9189 6.3329 10.2494 5.79226 9.70874C5.25162 9.1681 4.58214 8.77413 3.847 8.564L1 7.75L3.846 6.937C4.58114 6.72687 5.25062 6.3329 5.79126 5.79226C6.3319 5.25162 6.72587 4.58214 6.936 3.847L6.937 3.846Z" fill="black" stroke="black" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ))}
+      </span>
+    </div>
+  );
+};
+
+export default SparkleButton;`;
+
+      case 'japanese-matrix':
+        return `import React from 'react';
+import './JapaneseMatrix.css';
+
+const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ';
+
+export const JapaneseMatrix: React.FC = () => {
+  const spans = Array.from({ length: 150 }).map((_, i) => {
+    const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+    return <span key={i}>{char}</span>;
+  });
+
+  return (
+    <div className="jp-matrix-wrapper">
+      <div className="jp-matrix">
+        {spans}
+      </div>
+    </div>
+  );
+};
+
+export default JapaneseMatrix;`;
+
+      case 'back-to-top':
+        return `import React from 'react';
+import './BackToTop.css';
+
+export const BackToTop: React.FC = () => {
+  return (
+    <button className="back-to-top-button">
+      <svg className="svgIcon" viewBox="0 0 384 512">
+        <path d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 141.2V448c0 17.7 14.3 32 32 32s32-14.3 32-32V141.2L329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z" />
+      </svg>
+    </button>
+  );
+};
+
+export default BackToTop;`;
+
+      case 'glass-app-buttons':
+        return `import React from 'react';
+
+export const GlassAppButtons: React.FC = () => {
+  return (
+    <div className="grid grid-cols-2 gap-6 max-w-sm mx-auto p-4 select-none">
+      {/* Apple App Store */}
+      <button className="p-5 rounded-full backdrop-blur-lg border border-white/10 bg-gradient-to-tr from-black/60 to-black/40 shadow-lg hover:shadow-2xl hover:shadow-white/20 hover:scale-110 hover:rotate-3 active:scale-95 active:rotate-0 transition-all duration-300 ease-out cursor-pointer hover:border-white/30 hover:bg-gradient-to-tr hover:from-white/10 hover:to-black/40 group relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+        <div className="relative z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-7 h-7 fill-current text-white group-hover:text-white/90 transition-colors duration-300">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.21.67-2.93 1.49-.62.69-1.16 1.84-1.01 2.96 1.12.09 2.27-.57 2.95-1.39z"/>
+          </svg>
+        </div>
+      </button>
+
+      {/* Spotify */}
+      <button className="p-5 rounded-full backdrop-blur-lg border border-green-500/20 bg-gradient-to-tr from-black/60 to-black/40 shadow-lg hover:shadow-2xl hover:shadow-green-500/30 hover:scale-110 hover:rotate-2 active:scale-95 active:rotate-0 transition-all duration-300 ease-out cursor-pointer hover:border-green-500/50 hover:bg-gradient-to-tr hover:from-green-500/10 hover:to-black/40 group relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+        <div className="relative z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" className="w-7 h-7 text-green-500 fill-current group-hover:text-green-400 transition-colors duration-300">
+            <path d="M248 8C111.1 8 0 119.1 0 256s111.1 248 248 248 248-111.1 248-248S384.9 8 248 8zm100.7 364.9c-4.2 0-6.8-1.3-10.7-3.6-62.4-37.6-135-39.2-206.7-24.5-3.9 1-9 2.6-11.9 2.6-9.7 0-15.8-7.7-15.8-15.8 0-10.3 6.1-15.2 13.6-16.8 81.9-18.1 165.6-16.5 237 30.2 6.1 3.9 9.7 7.4 9.7 16.5s-7.1 15.4-15.2 15.4zm26.9-65.6c-5.2 0-8.7-2.3-12.3-4.2-62.5-37-155.7-51.9-238.6-29.4-4.8 1.3-7.4 2.6-11.9 2.6-10.7 0-19.4-8.7-19.4-19.4s5.2-17.8 15.5-20.7c27.8-7.8 56.2-13.6 97.8-13.6 64.9 0 127.6 16.1 177 45.5 8.1 4.8 11.3 11 11.3 19.7-.1 10.8-8.5 19.5-19.4 19.5zm31-76.2c-5.2 0-8.4-1.3-12.9-3.9-71.2-42.5-198.5-52.7-280.9-29.7-3.6 1-8.1 2.6-11.4 2.6-12.9 0-21.9-9-21.9-21.9 0-10.9 6.5-19 16.1-21.6 90.7-25.5 229.4-12.6 312 37.1 7.1 4.2 10 10.9 10 18.7 0 11.7-9.4 18.7-19 18.7z" />
+          </svg>
+        </div>
+      </button>
+    </div>
+  );
+};
+
+export default GlassAppButtons;`;
+
       default:
         return '';
     }
@@ -2376,6 +3102,36 @@ export default MagicBento;`;
               particleCount={controlValues.particleCount !== undefined ? controlValues.particleCount : 12}
               glowColor={hexToRgbStr(controlValues.glowColor || '#8400ff')}
             />
+          </div>
+        );
+      case 'terminal-card':
+        return (
+          <div className="w-full flex items-center justify-center p-4">
+            <TerminalCard />
+          </div>
+        );
+      case 'sparkle-button':
+        return (
+          <div className="w-full h-40 flex items-center justify-center p-4">
+            <SparkleButton />
+          </div>
+        );
+      case 'japanese-matrix':
+        return (
+          <div className="w-full max-w-sm p-4">
+            <JapaneseMatrix />
+          </div>
+        );
+      case 'back-to-top':
+        return (
+          <div className="w-full h-40 flex items-center justify-center p-4">
+            <BackToTop />
+          </div>
+        );
+      case 'glass-app-buttons':
+        return (
+          <div className="w-full p-4 flex items-center justify-center">
+            <GlassAppButtons />
           </div>
         );
       default:
@@ -2513,7 +3269,7 @@ export default MagicBento;`;
                     onClick={() => setExportTab('usage')}
                     className={cn(
                       "px-2.5 py-1 text-[10px] font-mono rounded cursor-pointer transition-colors",
-                      exportTab === 'usage' ? "bg-zinc-900 text-white font-bold" : "text-zinc-500 hover:text-zinc-350"
+                      exportTab === 'usage' ? "bg-zinc-900 text-white font-bold" : "text-zinc-500 hover:text-zinc-355"
                     )}
                   >
                     Usage Example
