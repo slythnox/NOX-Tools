@@ -312,6 +312,350 @@ const ANIMATIONS: AnimationConfig[] = [
   }
 ];
 
+// SUB-COMPONENTS TO PREVENT CONDITIONAL HOOKS VIOLATIONS
+const TextTypePreview = ({
+  text,
+  typeSpeed,
+  cursorColor,
+  cursorStyle,
+  triggerKey
+}: {
+  text: string;
+  typeSpeed: number;
+  cursorColor: string;
+  cursorStyle: string;
+  triggerKey: number;
+}) => {
+  const [typedText, setTypedText] = useState('');
+
+  useEffect(() => {
+    setTypedText('');
+    let idx = 0;
+    const timer = setInterval(() => {
+      if (idx < text.length) {
+        setTypedText(prev => prev + text.charAt(idx));
+        idx++;
+      } else {
+        clearInterval(timer);
+      }
+    }, typeSpeed);
+
+    return () => clearInterval(timer);
+  }, [text, typeSpeed, triggerKey]);
+
+  return (
+    <div className="text-2xl sm:text-3xl font-mono text-white flex items-center gap-1 select-none font-bold text-center max-w-xl">
+      <span>{typedText}</span>
+      {cursorStyle !== 'none' && (
+        <span
+          className={cn(
+            "w-2.5 h-6 bg-current inline-block",
+            cursorStyle === 'blinking' && "animate-pulse"
+          )}
+          style={{ color: cursorColor }}
+        />
+      )}
+    </div>
+  );
+};
+
+const ShufflePreview = ({
+  text,
+  speed,
+  decryptDelay,
+  triggerKey
+}: {
+  text: string;
+  speed: number;
+  decryptDelay: number;
+  triggerKey: number;
+}) => {
+  const [shuffled, setShuffled] = useState('');
+
+  useEffect(() => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let ticks = 0;
+    const target = text;
+    let timer: any;
+
+    const tick = () => {
+      const progress = (ticks * speed) / decryptDelay;
+      const solvedCount = Math.floor(target.length * Math.min(1, progress));
+
+      let out = '';
+      for (let i = 0; i < target.length; i++) {
+        if (i < solvedCount) {
+          out += target[i];
+        } else if (target[i] === ' ') {
+          out += ' ';
+        } else {
+          out += chars[Math.floor(Math.random() * chars.length)];
+        }
+      }
+      setShuffled(out);
+
+      if (solvedCount < target.length) {
+        ticks++;
+        timer = setTimeout(tick, speed);
+      }
+    };
+
+    tick();
+    return () => clearTimeout(timer);
+  }, [text, speed, decryptDelay, triggerKey]);
+
+  return (
+    <div className="text-3xl sm:text-4xl font-mono tracking-wider font-extrabold text-white text-center select-none max-w-xl">
+      {shuffled}
+    </div>
+  );
+};
+
+const TextPressurePreview = ({
+  text,
+  minWeight,
+  maxWeight,
+  letterSpacing
+}: {
+  text: string;
+  minWeight: number;
+  maxWeight: number;
+  letterSpacing: number;
+}) => {
+  const [weight, setWeight] = useState(minWeight);
+
+  return (
+    <div
+      className="text-4xl sm:text-6xl tracking-tight transition-all duration-300 select-none uppercase font-sans text-center max-w-lg cursor-pointer"
+      style={{
+        fontWeight: weight,
+        letterSpacing: `${letterSpacing}px`
+      }}
+      onMouseEnter={() => setWeight(maxWeight)}
+      onMouseLeave={() => setWeight(minWeight)}
+    >
+      {text}
+    </div>
+  );
+};
+
+const TextCursorPreview = ({
+  text,
+  hoverScale,
+  cursorSize
+}: {
+  text: string;
+  hoverScale: number;
+  cursorSize: number;
+}) => {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-2 text-2xl sm:text-3xl font-mono text-zinc-100 select-none">
+      {text.split(' ').map((word, i) => (
+        <span
+          key={i}
+          className="relative inline-flex items-center gap-1 py-1 px-1.5 rounded cursor-pointer transition-all duration-200"
+          style={{
+            transform: hoverIdx === i ? `scale(${hoverScale})` : 'scale(1)',
+            color: hoverIdx === i ? '#ffffff' : 'inherit'
+          }}
+          onMouseEnter={() => setHoverIdx(i)}
+          onMouseLeave={() => setHoverIdx(null)}
+        >
+          {word}
+          {hoverIdx === i && (
+            <span
+              className="absolute bg-violet-500 rounded-full animate-ping pointer-events-none"
+              style={{
+                width: cursorSize,
+                height: cursorSize,
+                bottom: -2,
+                right: '50%',
+                transform: 'translateX(50%)'
+              }}
+            />
+          )}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const DecryptedTextPreview = ({
+  text,
+  decryptSpeed,
+  scrambleCount,
+  triggerKey
+}: {
+  text: string;
+  decryptSpeed: number;
+  scrambleCount: number;
+  triggerKey: number;
+}) => {
+  const [decrypted, setDecrypted] = useState('');
+
+  useEffect(() => {
+    const matrixChars = '0123456789ABCDEF@#$%&+*';
+    let cycle = 0;
+    let timer: any;
+
+    const step = () => {
+      let out = '';
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === ' ') {
+          out += ' ';
+          continue;
+        }
+        const charCycle = cycle - i * 2;
+        if (charCycle >= scrambleCount) {
+          out += text[i];
+        } else if (charCycle >= 0) {
+          out += matrixChars[Math.floor(Math.random() * matrixChars.length)];
+        } else {
+          out += '';
+        }
+      }
+      setDecrypted(out);
+
+      const isDone = cycle >= text.length * 2 + scrambleCount;
+      if (!isDone) {
+        cycle++;
+        timer = setTimeout(step, decryptSpeed);
+      }
+    };
+
+    step();
+    return () => clearTimeout(timer);
+  }, [text, decryptSpeed, scrambleCount, triggerKey]);
+
+  return (
+    <div className="text-2xl sm:text-3xl font-mono text-emerald-500 tracking-widest font-bold text-center select-none max-w-xl">
+      {decrypted}
+    </div>
+  );
+};
+
+const TrueFocusPreview = ({
+  text,
+  blurAmount,
+  scale
+}: {
+  text: string;
+  blurAmount: number;
+  scale: number;
+}) => {
+  const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
+
+  return (
+    <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-2xl sm:text-3xl text-zinc-350 select-none">
+      {text.split(' ').map((word, i) => {
+        const isHovered = focusedIdx === i;
+        const isAnyHovered = focusedIdx !== null;
+        const shouldBlur = isAnyHovered && !isHovered;
+
+        return (
+          <span
+            key={i}
+            className="cursor-pointer transition-all duration-300 inline-block font-sans"
+            style={{
+              filter: shouldBlur ? `blur(${blurAmount}px)` : 'blur(0px)',
+              opacity: shouldBlur ? 0.35 : 1,
+              transform: isHovered ? `scale(${scale})` : 'scale(1)',
+              color: isHovered ? '#ffffff' : 'inherit'
+            }}
+            onMouseEnter={() => setFocusedIdx(i)}
+            onMouseLeave={() => setFocusedIdx(null)}
+          >
+            {word}
+          </span>
+        );
+      })}
+    </div>
+  );
+};
+
+const ScrambledTextPreview = ({
+  text,
+  speed
+}: {
+  text: string;
+  speed: number;
+}) => {
+  const [scrambled, setScrambled] = useState(text);
+  const [hovered, setHovered] = useState(false);
+
+  useEffect(() => {
+    if (!hovered) {
+      setScrambled(text);
+      return;
+    }
+    const chars = '!@#$%^&*()-+=[]{}|;:,.<>?/~';
+    const interval = setInterval(() => {
+      const out = text
+        .split('')
+        .map(c => {
+          if (c === ' ') return ' ';
+          return Math.random() > 0.6 ? c : chars[Math.floor(Math.random() * chars.length)];
+        })
+        .join('');
+      setScrambled(out);
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [text, speed, hovered]);
+
+  return (
+    <div
+      className="text-3xl sm:text-4xl font-extrabold tracking-wide text-white select-none cursor-pointer uppercase transition-colors duration-150 hover:text-violet-400"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {scrambled}
+    </div>
+  );
+};
+
+const RotatingTextPreview = ({
+  text,
+  interval,
+  transitionType
+}: {
+  text: string;
+  interval: number;
+  transitionType: string;
+}) => {
+  const words = text.split(',').map(w => w.trim());
+  const [wordIdx, setWordIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWordIdx(prev => (prev + 1) % words.length);
+    }, interval * 1000);
+    return () => clearInterval(timer);
+  }, [words.length, interval]);
+
+  return (
+    <div className="flex items-center justify-center gap-2 text-2xl sm:text-4xl font-extrabold text-white select-none">
+      <span className="text-zinc-400 font-sans">ONYX is</span>
+      <div className="relative overflow-hidden h-12 w-48 flex items-center justify-start">
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={wordIdx}
+            className="absolute text-violet-400 font-mono font-bold"
+            initial={transitionType === 'slide' ? { y: 30, opacity: 0 } : { opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={transitionType === 'slide' ? { y: -30, opacity: 0 } : { opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {words[wordIdx]}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
 export default function TextAnimationsPage() {
   const [activeAnimId, setActiveAnimId] = useState<string>('split-text');
   const [activeTab, setActiveTab] = useState<AnimationTab>('preview');
@@ -743,80 +1087,28 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}({
         const cursorColor = controlValues.cursorColor || '#8b5cf6';
         const cursorStyle = controlValues.cursorStyle || 'blinking';
 
-        const [typedText, setTypedText] = useState('');
-
-        useEffect(() => {
-          setTypedText('');
-          let idx = 0;
-          const timer = setInterval(() => {
-            if (idx < text.length) {
-              setTypedText(prev => prev + text.charAt(idx));
-              idx++;
-            } else {
-              clearInterval(timer);
-            }
-          }, typeSpeed);
-
-          return () => clearInterval(timer);
-        }, [text, typeSpeed, triggerKey]);
-
         return (
-          <div className="text-2xl sm:text-3xl font-mono text-white flex items-center gap-1 select-none font-bold text-center max-w-xl">
-            <span>{typedText}</span>
-            {cursorStyle !== 'none' && (
-              <span
-                className={cn(
-                  "w-2.5 h-6 bg-current inline-block",
-                  cursorStyle === 'blinking' && "animate-pulse"
-                )}
-                style={{ color: cursorColor }}
-              />
-            )}
-          </div>
+          <TextTypePreview
+            text={text}
+            typeSpeed={typeSpeed}
+            cursorColor={cursorColor}
+            cursorStyle={cursorStyle}
+            triggerKey={triggerKey}
+          />
         );
       }
 
       case 'shuffle': {
         const speed = controlValues.speed || 30;
         const decryptDelay = controlValues.duration || 400;
-        const [shuffled, setShuffled] = useState('');
-
-        useEffect(() => {
-          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-          let ticks = 0;
-          const target = text;
-          let timer: any;
-
-          const tick = () => {
-            const progress = (ticks * speed) / decryptDelay;
-            const solvedCount = Math.floor(target.length * Math.min(1, progress));
-
-            let out = '';
-            for (let i = 0; i < target.length; i++) {
-              if (i < solvedCount) {
-                out += target[i];
-              } else if (target[i] === ' ') {
-                out += ' ';
-              } else {
-                out += chars[Math.floor(Math.random() * chars.length)];
-              }
-            }
-            setShuffled(out);
-
-            if (solvedCount < target.length) {
-              ticks++;
-              timer = setTimeout(tick, speed);
-            }
-          };
-
-          tick();
-          return () => clearTimeout(timer);
-        }, [text, speed, decryptDelay, triggerKey]);
 
         return (
-          <div className="text-3xl sm:text-4xl font-mono tracking-wider font-extrabold text-white text-center select-none max-w-xl">
-            {shuffled}
-          </div>
+          <ShufflePreview
+            text={text}
+            speed={speed}
+            decryptDelay={decryptDelay}
+            triggerKey={triggerKey}
+          />
         );
       }
 
@@ -854,20 +1146,14 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}({
         const minWeight = controlValues.minWeight || 200;
         const maxWeight = controlValues.maxWeight || 900;
         const letterSpacing = controlValues.letterSpacing || 2;
-        const [weight, setWeight] = useState(minWeight);
 
         return (
-          <div
-            className="text-4xl sm:text-6xl tracking-tight transition-all duration-300 select-none uppercase font-sans text-center max-w-lg cursor-pointer"
-            style={{
-              fontWeight: weight,
-              letterSpacing: `${letterSpacing}px`
-            }}
-            onMouseEnter={() => setWeight(maxWeight)}
-            onMouseLeave={() => setWeight(minWeight)}
-          >
-            {text}
-          </div>
+          <TextPressurePreview
+            text={text}
+            minWeight={minWeight}
+            maxWeight={maxWeight}
+            letterSpacing={letterSpacing}
+          />
         );
       }
 
@@ -994,116 +1280,40 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}({
       case 'text-cursor': {
         const hoverScale = controlValues.hoverScale || 1.15;
         const cursorSize = controlValues.cursorSize || 12;
-        const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
         return (
-          <div className="flex flex-wrap items-center justify-center gap-x-2 text-2xl sm:text-3xl font-mono text-zinc-100 select-none">
-            {text.split(' ').map((word, i) => (
-              <span
-                key={i}
-                className="relative inline-flex items-center gap-1 py-1 px-1.5 rounded cursor-pointer transition-all duration-200"
-                style={{
-                  transform: hoverIdx === i ? `scale(${hoverScale})` : 'scale(1)',
-                  color: hoverIdx === i ? '#ffffff' : 'inherit'
-                }}
-                onMouseEnter={() => setHoverIdx(i)}
-                onMouseLeave={() => setHoverIdx(null)}
-              >
-                {word}
-                {hoverIdx === i && (
-                  <span
-                    className="absolute bg-violet-500 rounded-full animate-ping pointer-events-none"
-                    style={{
-                      width: cursorSize,
-                      height: cursorSize,
-                      bottom: -2,
-                      right: '50%',
-                      transform: 'translateX(50%)'
-                    }}
-                  />
-                )}
-              </span>
-            ))}
-          </div>
+          <TextCursorPreview
+            text={text}
+            hoverScale={hoverScale}
+            cursorSize={cursorSize}
+          />
         );
       }
 
       case 'decrypted-text': {
         const decryptSpeed = controlValues.decryptSpeed || 40;
         const scrambleCount = controlValues.scrambleCount || 6;
-        const [decrypted, setDecrypted] = useState('');
-
-        useEffect(() => {
-          const matrixChars = '0123456789ABCDEF@#$%&+*';
-          let cycle = 0;
-          let timer: any;
-
-          const step = () => {
-            let out = '';
-            for (let i = 0; i < text.length; i++) {
-              if (text[i] === ' ') {
-                out += ' ';
-                continue;
-              }
-              const charCycle = cycle - i * 2;
-              if (charCycle >= scrambleCount) {
-                out += text[i];
-              } else if (charCycle >= 0) {
-                out += matrixChars[Math.floor(Math.random() * matrixChars.length)];
-              } else {
-                out += '';
-              }
-            }
-            setDecrypted(out);
-
-            const isDone = cycle >= text.length * 2 + scrambleCount;
-            if (!isDone) {
-              cycle++;
-              timer = setTimeout(step, decryptSpeed);
-            }
-          };
-
-          step();
-          return () => clearTimeout(timer);
-        }, [text, decryptSpeed, scrambleCount, triggerKey]);
 
         return (
-          <div className="text-2xl sm:text-3xl font-mono text-emerald-500 tracking-widest font-bold text-center select-none max-w-xl">
-            {decrypted}
-          </div>
+          <DecryptedTextPreview
+            text={text}
+            decryptSpeed={decryptSpeed}
+            scrambleCount={scrambleCount}
+            triggerKey={triggerKey}
+          />
         );
       }
 
       case 'true-focus': {
         const blurAmount = controlValues.blurAmount || 5;
         const scale = controlValues.scale || 1.1;
-        const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
 
         return (
-          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-2xl sm:text-3xl text-zinc-350 select-none">
-            {text.split(' ').map((word, i) => {
-              const isHovered = focusedIdx === i;
-              const isAnyHovered = focusedIdx !== null;
-              const shouldBlur = isAnyHovered && !isHovered;
-
-              return (
-                <span
-                  key={i}
-                  className="cursor-pointer transition-all duration-300 inline-block font-sans"
-                  style={{
-                    filter: shouldBlur ? `blur(${blurAmount}px)` : 'blur(0px)',
-                    opacity: shouldBlur ? 0.35 : 1,
-                    transform: isHovered ? `scale(${scale})` : 'scale(1)',
-                    color: isHovered ? '#ffffff' : 'inherit'
-                  }}
-                  onMouseEnter={() => setFocusedIdx(i)}
-                  onMouseLeave={() => setFocusedIdx(null)}
-                >
-                  {word}
-                </span>
-              );
-            })}
-          </div>
+          <TrueFocusPreview
+            text={text}
+            blurAmount={blurAmount}
+            scale={scale}
+          />
         );
       }
 
@@ -1197,71 +1407,25 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}({
 
       case 'scrambled-text': {
         const speed = controlValues.speed || 40;
-        const [scrambled, setScrambled] = useState(text);
-        const [hovered, setHovered] = useState(false);
-
-        useEffect(() => {
-          if (!hovered) {
-            setScrambled(text);
-            return;
-          }
-          const chars = '!@#$%^&*()-+=[]{}|;:,.<>?/~';
-          const interval = setInterval(() => {
-            const out = text
-              .split('')
-              .map(c => {
-                if (c === ' ') return ' ';
-                return Math.random() > 0.6 ? c : chars[Math.floor(Math.random() * chars.length)];
-              })
-              .join('');
-            setScrambled(out);
-          }, speed);
-
-          return () => clearInterval(interval);
-        }, [text, speed, hovered]);
 
         return (
-          <div
-            className="text-3xl sm:text-4xl font-extrabold tracking-wide text-white select-none cursor-pointer uppercase transition-colors duration-150 hover:text-violet-400"
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-          >
-            {scrambled}
-          </div>
+          <ScrambledTextPreview
+            text={text}
+            speed={speed}
+          />
         );
       }
 
       case 'rotating-text': {
         const interval = controlValues.interval || 2.0;
         const transitionType = controlValues.transitionType || 'slide';
-        const words = text.split(',').map(w => w.trim());
-        const [wordIdx, setWordIdx] = useState(0);
-
-        useEffect(() => {
-          const timer = setInterval(() => {
-            setWordIdx(prev => (prev + 1) % words.length);
-          }, interval * 1000);
-          return () => clearInterval(timer);
-        }, [words.length, interval]);
 
         return (
-          <div className="flex items-center justify-center gap-2 text-2xl sm:text-4xl font-extrabold text-white select-none">
-            <span className="text-zinc-400 font-sans">ONYX is</span>
-            <div className="relative overflow-hidden h-12 w-48 flex items-center justify-start">
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={wordIdx}
-                  className="absolute text-violet-400 font-mono font-bold"
-                  initial={transitionType === 'slide' ? { y: 30, opacity: 0 } : { opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={transitionType === 'slide' ? { y: -30, opacity: 0 } : { opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {words[wordIdx]}
-                </motion.span>
-              </AnimatePresence>
-            </div>
-          </div>
+          <RotatingTextPreview
+            text={text}
+            interval={interval}
+            transitionType={transitionType}
+          />
         );
       }
 
