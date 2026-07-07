@@ -1,50 +1,58 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, Code, RotateCcw, Copy, Check, Sliders, Layers, Play, ChevronUp, ChevronDown, Monitor, Laptop, Smartphone, ExternalLink } from 'lucide-react';
+import { Eye, Code, RotateCcw, Copy, Check, Sliders, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Import UI presets
+import { AnimatedList } from '@/components/ui/AnimatedList';
+import ScrollStack, { ScrollStackItem } from '@/components/ui/ScrollStack';
+import BubbleMenu from '@/components/ui/BubbleMenu';
+import MagicBento from '@/components/ui/MagicBento';
 
 // TYPES
 type ComponentTab = 'preview' | 'code';
-type ExportTab = 'react' | 'usage';
+type ExportTab = 'react' | 'css' | 'usage';
 
 interface ControlField {
   id: string;
   label: string;
-  type: 'slider' | 'select' | 'toggle' | 'text' | 'color';
+  type: 'slider' | 'toggle' | 'color';
   default: any;
   min?: number;
   max?: number;
   step?: number;
-  options?: { value: string; label: string }[];
 }
 
 interface ComponentConfig {
   id: string;
   name: string;
   description: string;
-  isNew?: boolean;
   controls: ControlField[];
 }
 
-// 36 COMPONENTS LIST
 const COMPONENTS: ComponentConfig[] = [
   {
     id: 'animated-list',
     name: 'Animated List',
     description: 'Entrance animation transitions for list container layouts.',
     controls: [
-      { id: 'fadeItems', label: 'Fade Items', type: 'toggle', default: true },
-      { id: 'keyboardNav', label: 'Keyboard Navigation', type: 'toggle', default: true },
-      { id: 'showScrollbar', label: 'Show Scrollbar', type: 'toggle', default: false }
+      { id: 'showGradients', label: 'Show Gradients', type: 'toggle', default: true },
+      { id: 'enableArrowNavigation', label: 'Enable Arrow Navigation', type: 'toggle', default: true },
+      { id: 'displayScrollbar', label: 'Display Scrollbar', type: 'toggle', default: true },
+      { id: 'initialSelectedIndex', label: 'Initial Selected Index', type: 'slider', default: -1, min: -1, max: 14, step: 1 }
     ]
   },
   {
     id: 'scroll-stack',
     name: 'Scroll Stack',
-    description: 'Overlapping layout where cards shift and stack as you hover.',
+    description: 'Overlapping layout where cards shift and stack as you scroll.',
     controls: [
-      { id: 'cardScale', label: 'Card Scale factor', type: 'slider', default: 0.9, min: 0.7, max: 1.0, step: 0.05 },
-      { id: 'spreadOffset', label: 'Spread Space (px)', type: 'slider', default: 45, min: 10, max: 80, step: 5 }
+      { id: 'itemDistance', label: 'Item Distance (px)', type: 'slider', default: 100, min: 20, max: 200, step: 10 },
+      { id: 'itemScale', label: 'Item Scale increment', type: 'slider', default: 0.03, min: 0.01, max: 0.1, step: 0.01 },
+      { id: 'itemStackDistance', label: 'Item Stack Distance', type: 'slider', default: 30, min: 10, max: 80, step: 5 },
+      { id: 'baseScale', label: 'Base Scale factor', type: 'slider', default: 0.85, min: 0.5, max: 1.0, step: 0.05 },
+      { id: 'rotationAmount', label: 'Rotation amount (deg)', type: 'slider', default: 0, min: -15, max: 15, step: 1 },
+      { id: 'blurAmount', label: 'Blur amount (px)', type: 'slider', default: 0, min: 0, max: 8, step: 1 }
     ]
   },
   {
@@ -52,8 +60,10 @@ const COMPONENTS: ComponentConfig[] = [
     name: 'Bubble Menu',
     description: 'Horizontal navigation menu with a sliding bubble backplate.',
     controls: [
-      { id: 'accentColor', label: 'Bubble Accent Color', type: 'color', default: '#a78bfa' },
-      { id: 'dampening', label: 'Slide Cycle Speed', type: 'slider', default: 12, min: 2, max: 40, step: 2 }
+      { id: 'menuBg', label: 'Menu Bg Color', type: 'color', default: '#ffffff' },
+      { id: 'menuContentColor', label: 'Menu Content Color', type: 'color', default: '#111111' },
+      { id: 'animationDuration', label: 'Animation Duration (s)', type: 'slider', default: 0.5, min: 0.1, max: 2.0, step: 0.1 },
+      { id: 'staggerDelay', label: 'Stagger Delay (s)', type: 'slider', default: 0.12, min: 0.02, max: 0.5, step: 0.02 }
     ]
   },
   {
@@ -61,781 +71,30 @@ const COMPONENTS: ComponentConfig[] = [
     name: 'Magic Bento',
     description: 'Interactive Bento dashboard grid with 3D parallax and glowing borders.',
     controls: [
-      { id: 'glowColor', label: 'Bento Border Glow', type: 'color', default: '#8b5cf6' },
-      { id: 'tiltStrength', label: 'Parallax Tilt Factor', type: 'slider', default: 8, min: 2, max: 20, step: 1 }
-    ]
-  },
-  {
-    id: 'circular-gallery',
-    name: 'Circular Gallery',
-    description: 'Image cards positioned in a 3D orbit wheel layout.',
-    controls: [
-      { id: 'radius', label: 'Orbit Circle Radius', type: 'slider', default: 110, min: 50, max: 250, step: 5 },
-      { id: 'rotationSpeed', label: 'Rotation Cycle Time (s)', type: 'slider', default: 15, min: 5, max: 40, step: 1 }
-    ]
-  },
-  {
-    id: 'reflective-card',
-    name: 'Reflective Card',
-    description: 'Card with metallic reflection glare that slides on pointer hover.',
-    controls: [
-      { id: 'glareOpacity', label: 'Glare Peak Intensity', type: 'slider', default: 0.4, min: 0.1, max: 1.0, step: 0.05 },
-      { id: 'tiltScale', label: '3D Rotation Angle', type: 'slider', default: 15, min: 5, max: 30, step: 1 }
-    ]
-  },
-  {
-    id: 'card-nav',
-    name: 'Card Nav',
-    description: 'Navigation menu where tabs open like folding folder cards.',
-    controls: [
-      { id: 'spacing', label: 'Card Tab Spacing', type: 'slider', default: 20, min: 5, max: 40, step: 5 }
-    ]
-  },
-  {
-    id: 'stack',
-    name: 'Stack',
-    description: 'Vertical deck layout where cards animate to back on scroll.',
-    controls: [
-      { id: 'opacityFactor', label: 'Back Card Opacity', type: 'slider', default: 0.4, min: 0.1, max: 1.0, step: 0.05 }
-    ]
-  },
-  {
-    id: 'fluid-glass',
-    name: 'Fluid Glass',
-    description: 'Frosted glass container layout with rotating mesh background.',
-    controls: [
-      { id: 'blur', label: 'Backdrop Blur (px)', type: 'slider', default: 16, min: 4, max: 40, step: 2 }
-    ]
-  },
-  {
-    id: 'pill-nav',
-    name: 'Pill Nav',
-    description: 'Rounded tabs with a sliding slider active background.',
-    controls: [
-      { id: 'pillColor', label: 'Pill Background Color', type: 'color', default: '#3f3f46' }
-    ]
-  },
-  {
-    id: 'tilted-card',
-    name: 'Tilted Card',
-    description: 'Layout card that rotates on multiple axes upon cursor hover.',
-    controls: [
-      { id: 'tiltStrength', label: 'Tilt Speed Intensity', type: 'slider', default: 12, min: 4, max: 28, step: 2 }
-    ]
-  },
-  {
-    id: 'masonry',
-    name: 'Masonry',
-    description: 'Dynamic items grid with entrance animations.',
-    controls: [
-      { id: 'stagger', label: 'Stagger Speed (ms)', type: 'slider', default: 40, min: 10, max: 150, step: 5 }
-    ]
-  },
-  {
-    id: 'glass-surface',
-    name: 'Glass Surface',
-    description: 'Reflective frosted glass card layouts.',
-    controls: [
-      { id: 'opacity', label: 'Surface Opacity', type: 'slider', default: 0.15, min: 0.05, max: 0.4, step: 0.02 }
-    ]
-  },
-  {
-    id: 'dome-gallery',
-    name: 'Dome Gallery',
-    description: 'Interactive gallery arranged in a fisheye dome curve.',
-    controls: [
-      { id: 'curvature', label: 'Fisheye Curvature', type: 'slider', default: 45, min: 10, max: 90, step: 5 }
-    ]
-  },
-  {
-    id: 'chroma-grid',
-    name: 'Chroma Grid',
-    description: 'Interactive layout grid with color shifts on hover.',
-    controls: [
-      { id: 'hueSpeed', label: 'Color Cycle Speed', type: 'slider', default: 5, min: 1, max: 15, step: 1 }
-    ]
-  },
-  {
-    id: 'folder',
-    name: 'Folder',
-    description: 'Accordion layout mimicking opening computer folders.',
-    controls: [
-      { id: 'allowMultiple', label: 'Allow Multiple Open', type: 'toggle', default: false }
-    ]
-  },
-  {
-    id: 'staggered-menu',
-    name: 'Staggered Menu',
-    description: 'Dropdown list with delayed index entries.',
-    controls: [
-      { id: 'delay', label: 'Stagger delay (ms)', type: 'slider', default: 35, min: 10, max: 100, step: 5 }
-    ]
-  },
-  {
-    id: 'model-viewer',
-    name: 'Model Viewer',
-    description: '3D cube container model rotation on drag.',
-    controls: [
-      { id: 'speed', label: 'Rotation damping', type: 'slider', default: 12, min: 4, max: 30, step: 2 }
-    ]
-  },
-  {
-    id: 'lanyard',
-    name: 'Lanyard',
-    description: 'Interactive floating tag badge that follows pointer motion.',
-    controls: [
-      { id: 'elasticity', label: 'Gravity spring rate', type: 'slider', default: 8, min: 2, max: 20, step: 1 }
-    ]
-  },
-  {
-    id: 'profile-card',
-    name: 'Profile Card',
-    description: 'Sleek user profile container with slide-up options.',
-    controls: [
-      { id: 'accentColor', label: 'Accent Border Highlight', type: 'color', default: '#3b82f6' }
-    ]
-  },
-  {
-    id: 'dock',
-    name: 'Dock',
-    description: 'macOS style dock bar which magnifies icons on hover.',
-    controls: [
-      { id: 'maxZoom', label: 'Hover Magnify Scale', type: 'slider', default: 1.6, min: 1.1, max: 2.2, step: 0.1 },
-      { id: 'dockPadding', label: 'Dock bar Padding (px)', type: 'slider', default: 10, min: 4, max: 20, step: 2 }
-    ]
-  },
-  {
-    id: 'gooey-nav',
-    name: 'Gooey Nav',
-    description: 'Circular submenus that liquefy and blend together.',
-    controls: [
-      { id: 'gooeyFactor', label: 'Gooey Blur Level', type: 'slider', default: 14, min: 6, max: 24, step: 2 }
-    ]
-  },
-  {
-    id: 'pixel-card',
-    name: 'Pixel Card',
-    description: 'Card with pixel grid blocks fading in on cursor hover.',
-    controls: [
-      { id: 'pixelSize', label: 'Grid block size (px)', type: 'slider', default: 20, min: 10, max: 40, step: 5 }
-    ]
-  },
-  {
-    id: 'carousel',
-    name: 'Carousel',
-    description: 'Horizontal swipes layout cards slider.',
-    controls: [
-      { id: 'gap', label: 'Slide spacing gap (px)', type: 'slider', default: 16, min: 4, max: 48, step: 4 }
-    ]
-  },
-  {
-    id: 'spotlight-card',
-    name: 'Spotlight Card',
-    description: 'Standard card featuring radial spotlight highlight following pointer.',
-    controls: [
-      { id: 'spotlightSize', label: 'Spotlight radius (px)', type: 'slider', default: 140, min: 50, max: 300, step: 10 },
-      { id: 'spotlightColor', label: 'Spotlight glow color', type: 'color', default: '#8b5cf6' }
-    ]
-  },
-  {
-    id: 'border-glow',
-    name: 'Border Glow',
-    isNew: true,
-    description: 'Card layouts wrapped inside continuous rotating neon border gradients.',
-    controls: [
-      { id: 'glowSpeed', label: 'Glow Rotation Speed (s)', type: 'slider', default: 3.5, min: 1.0, max: 8.0, step: 0.5 },
-      { id: 'glowColor', label: 'Glow Accent Color', type: 'color', default: '#a78bfa' }
-    ]
-  },
-  {
-    id: 'flying-posters',
-    name: 'Flying Posters',
-    description: 'Images drifting in space tilting towards mouse axis.',
-    controls: [
-      { id: 'drift', label: 'Drifting speed', type: 'slider', default: 2.0, min: 0.5, max: 5.0, step: 0.5 }
-    ]
-  },
-  {
-    id: 'card-swap',
-    name: 'Card Swap',
-    description: 'Framer motion swipable deck cards deck.',
-    controls: [
-      { id: 'rotationTilt', label: 'Drag rotation factor', type: 'slider', default: 6, min: 2, max: 15, step: 1 }
-    ]
-  },
-  {
-    id: 'glass-icons',
-    name: 'Glass Icons',
-    description: 'Slanted application icon triggers with glass glaze overlays.',
-    controls: [
-      { id: 'slantAngle', label: 'Slant skew angle (deg)', type: 'slider', default: 12, min: 0, max: 30, step: 2 }
-    ]
-  },
-  {
-    id: 'decay-card',
-    name: 'Decay Card',
-    description: 'Container elements dissolving on exit.',
-    controls: [
-      { id: 'decayRate', label: 'Disintegration speed', type: 'slider', default: 4, min: 1, max: 10, step: 1 }
-    ]
-  },
-  {
-    id: 'flowing-menu',
-    name: 'Flowing Menu',
-    description: 'Dynamic items flowing in stream.',
-    controls: [
-      { id: 'speed', label: 'Flow speed multiplier', type: 'slider', default: 1.5, min: 0.5, max: 5.0, step: 0.5 }
-    ]
-  },
-  {
-    id: 'elastic-slider',
-    name: 'Elastic Slider',
-    description: 'Slide trigger handles stretching elastically.',
-    controls: [
-      { id: 'elasticity', label: 'Elastic pull multiplier', type: 'slider', default: 6, min: 2, max: 15, step: 1 }
-    ]
-  },
-  {
-    id: 'counter',
-    name: 'Counter',
-    description: 'Rolling numeric spinner digits.',
-    controls: [
-      { id: 'digits', label: 'Digits count limit', type: 'slider', default: 4, min: 2, max: 8, step: 1 }
-    ]
-  },
-  {
-    id: 'infinite-menu',
-    name: 'Infinite Menu',
-    description: 'Vertical lists rolling continuously.',
-    controls: [
-      { id: 'speed', label: 'Scroll duration rate', type: 'slider', default: 10, min: 2, max: 20, step: 1 }
-    ]
-  },
-  {
-    id: 'stepper',
-    name: 'Stepper',
-    description: 'Interactive steps progress checkpoints.',
-    controls: [
-      { id: 'steps', label: 'Checkpoint step count', type: 'slider', default: 4, min: 3, max: 6, step: 1 }
-    ]
-  },
-  {
-    id: 'bounce-cards',
-    name: 'Bounce Cards',
-    description: 'Bouncy card layers responding to mouse triggers.',
-    controls: [
-      { id: 'bounceHeight', label: 'Bouncy offset height', type: 'slider', default: 30, min: 10, max: 80, step: 5 }
+      { id: 'textAutoHide', label: 'Text Auto Hide', type: 'toggle', default: true },
+      { id: 'enableStars', label: 'Enable Stars', type: 'toggle', default: true },
+      { id: 'enableSpotlight', label: 'Enable Spotlight', type: 'toggle', default: true },
+      { id: 'enableBorderGlow', label: 'Enable Border Glow', type: 'toggle', default: true },
+      { id: 'enableTilt', label: 'Enable Tilt', type: 'toggle', default: false },
+      { id: 'enableMagnetism', label: 'Enable Magnetism', type: 'toggle', default: true },
+      { id: 'clickEffect', label: 'Click Effect', type: 'toggle', default: true },
+      { id: 'spotlightRadius', label: 'Spotlight Radius (px)', type: 'slider', default: 300, min: 100, max: 600, step: 20 },
+      { id: 'particleCount', label: 'Particle Count', type: 'slider', default: 12, min: 4, max: 32, step: 2 },
+      { id: 'glowColor', label: 'Glow Color Accent', type: 'color', default: '#8400ff' }
     ]
   }
 ];
 
-// SUB-COMPONENTS TO PREVENT CONDITIONAL HOOKS VIOLATIONS
-const AnimatedListPreview = ({
-  fadeItems,
-  keyboardNav,
-  showScrollbar,
-  triggerKey
-}: {
-  fadeItems: boolean;
-  keyboardNav: boolean;
-  showScrollbar: boolean;
-  triggerKey: number;
-}) => {
-  const [activeIdx, setActiveIdx] = useState<number>(0);
-  const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'];
-
-  useEffect(() => {
-    if (!keyboardNav) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActiveIdx(prev => (prev + 1) % items.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActiveIdx(prev => (prev - 1 + items.length) % items.length);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [keyboardNav, items.length]);
-
-  return (
-    <div key={triggerKey} className="w-full max-w-sm flex flex-col gap-3 py-4 select-none">
-      <div
-        className={cn(
-          "max-h-72 overflow-y-auto px-2 space-y-3",
-          showScrollbar ? "scrollbar-machined" : "scrollbar-none"
-        )}
-      >
-        {items.map((item, idx) => (
-          <motion.div
-            key={idx}
-            onClick={() => setActiveIdx(idx)}
-            initial={fadeItems ? { opacity: 0, y: 15 } : { y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1, duration: 0.3 }}
-            className={cn(
-              "w-full px-4 py-4 rounded-lg border text-sm font-mono transition-all duration-150 cursor-pointer",
-              activeIdx === idx
-                ? "bg-zinc-800/80 border-violet-500 text-white font-bold shadow-lg shadow-violet-500/10"
-                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200"
-            )}
-          >
-            {item}
-          </motion.div>
-        ))}
-      </div>
-      {keyboardNav && (
-        <span className="text-[9px] font-mono text-zinc-500 text-center uppercase tracking-widest mt-2">
-          Use ↑ / ↓ arrow keys to navigate
-        </span>
-      )}
-    </div>
-  );
+// Color converter helper
+const hexToRgbStr = (hex: string): string => {
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+  return result
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : '132, 0, 255';
 };
 
-const ScrollStackPreview = ({
-  cardScale,
-  spreadOffset
-}: {
-  cardScale: number;
-  spreadOffset: number;
-}) => {
-  const cards = ['Dashboard Layout', 'Analytical Graphs', 'User Profiles', 'Project Milestones'];
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-
-  return (
-    <div className="relative h-60 w-64 flex items-center justify-center select-none">
-      {cards.map((card, idx) => {
-        const isHovered = hoveredIdx === idx;
-        const offset = hoveredIdx !== null ? (idx - hoveredIdx) * spreadOffset : idx * 12;
-        const scale = hoveredIdx !== null ? (isHovered ? 1.0 : cardScale) : 1 - idx * 0.04;
-        const rotate = hoveredIdx !== null ? (isHovered ? 0 : (idx - hoveredIdx) * 2) : idx * 1.5;
-
-        return (
-          <motion.div
-            key={idx}
-            onMouseEnter={() => setHoveredIdx(idx)}
-            onMouseLeave={() => setHoveredIdx(null)}
-            animate={{
-              y: offset,
-              scale: scale,
-              rotate: rotate,
-              zIndex: isHovered ? 50 : 10 - idx
-            }}
-            transition={{ type: 'spring', stiffness: 220, damping: 20 }}
-            className={cn(
-              "absolute w-56 h-36 rounded-xl border p-4 bg-zinc-900 border-zinc-800 cursor-pointer flex flex-col justify-between shadow-2xl transition-colors duration-150",
-              isHovered ? "border-violet-500/50 bg-zinc-800/90" : ""
-            )}
-          >
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-widest">Card #{idx + 1}</span>
-              <div className="w-2 h-2 rounded-full bg-zinc-700" />
-            </div>
-            <span className="text-xs font-mono font-bold text-white leading-relaxed">{card}</span>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-};
-
-const BubbleMenuPreview = ({
-  accentColor,
-  dampening
-}: {
-  accentColor: string;
-  dampening: number;
-}) => {
-  const tabs = ['Home', 'Analytics', 'Settings', 'Profile'];
-  const [activeTab, setActiveTab] = useState<number>(0);
-  const [hoveredTab, setHoveredTab] = useState<number | null>(null);
-  const [rects, setRects] = useState<DOMRect[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const elements = containerRef.current.children;
-    const list: DOMRect[] = [];
-    for (let i = 0; i < elements.length; i++) {
-      list.push((elements[i] as HTMLElement).getBoundingClientRect());
-    }
-    setRects(list);
-  }, []);
-
-  const containerRect = containerRef.current?.getBoundingClientRect();
-  const activeRect = rects[hoveredTab !== null ? hoveredTab : activeTab];
-
-  return (
-    <div className="relative p-2 bg-zinc-950/80 border border-zinc-900 rounded-xl flex items-center gap-1 select-none">
-      {activeRect && containerRect && (
-        <motion.div
-          animate={{
-            left: activeRect.left - containerRect.left,
-            width: activeRect.width,
-            height: activeRect.height
-          }}
-          transition={{
-            type: 'spring',
-            stiffness: 300 - dampening * 5,
-            damping: 18 + dampening * 0.15
-          }}
-          className="absolute rounded-lg opacity-25"
-          style={{ backgroundColor: accentColor, top: activeRect.top - containerRect.top }}
-        />
-      )}
-      <div ref={containerRef} className="flex items-center gap-1 relative z-10">
-        {tabs.map((tab, idx) => (
-          <button
-            key={idx}
-            onClick={() => setActiveTab(idx)}
-            onMouseEnter={() => setHoveredTab(idx)}
-            onMouseLeave={() => setHoveredTab(null)}
-            className={cn(
-              "px-4 py-1.5 rounded-lg text-xs font-mono cursor-pointer transition-colors duration-150",
-              activeTab === idx ? "text-white font-bold" : "text-zinc-500 hover:text-zinc-300"
-            )}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const MagicBentoPreview = ({
-  glowColor,
-  tiltStrength
-}: {
-  glowColor: string;
-  tiltStrength: number;
-}) => {
-  const cards = [
-    { title: 'Overview', col: 'col-span-2', text: 'Realtime telemetry pipeline monitoring.' },
-    { title: 'Deploy', col: 'col-span-1', text: 'Vercel edge server push.' },
-    { title: 'Console', col: 'col-span-1', text: 'Staging environment compiler log streams.' },
-    { title: 'Settings', col: 'col-span-2', text: 'OKLCH system variables config.' }
-  ];
-
-  return (
-    <div className="grid grid-cols-3 gap-3 w-full max-w-md p-4 select-none">
-      {cards.map((card, idx) => {
-        const itemRef = useRef<HTMLDivElement>(null);
-        const [tilt, setTilt] = useState({ x: 0, y: 0 });
-        const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-        const [isHovered, setIsHovered] = useState(false);
-
-        const handleMouseMove = (e: React.MouseEvent) => {
-          if (!itemRef.current) return;
-          const rect = itemRef.current.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          setMousePos({ x, y });
-
-          const xc = rect.width / 2;
-          const yc = rect.height / 2;
-          const rotateX = ((y - yc) / yc) * tiltStrength;
-          const rotateY = -((x - xc) / xc) * tiltStrength;
-          setTilt({ x: rotateX, y: rotateY });
-        };
-
-        const handleMouseLeave = () => {
-          setIsHovered(false);
-          setTilt({ x: 0, y: 0 });
-        };
-
-        return (
-          <div
-            key={idx}
-            ref={itemRef}
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={handleMouseLeave}
-            className={cn(
-              "relative rounded-xl border border-zinc-900 bg-zinc-950 p-4 overflow-hidden cursor-pointer",
-              card.col
-            )}
-            style={{
-              transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-              transition: isHovered ? 'none' : 'transform 0.4s ease'
-            }}
-          >
-            {isHovered && (
-              <div
-                className="absolute pointer-events-none rounded-full blur-[60px] opacity-25"
-                style={{
-                  left: mousePos.x - 70,
-                  top: mousePos.y - 70,
-                  width: 140,
-                  height: 140,
-                  backgroundColor: glowColor
-                }}
-              />
-            )}
-            <span className="text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-widest">{card.title}</span>
-            <p className="text-[11px] font-mono text-zinc-300 mt-2 leading-relaxed">{card.text}</p>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const CircularGalleryPreview = ({
-  radius,
-  rotationSpeed
-}: {
-  radius: number;
-  rotationSpeed: number;
-}) => {
-  const cards = ['Img 1', 'Img 2', 'Img 3', 'Img 4', 'Img 5', 'Img 6'];
-
-  return (
-    <div className="relative h-64 w-64 flex items-center justify-center select-none overflow-hidden">
-      <motion.div
-        className="relative flex items-center justify-center"
-        style={{ width: radius * 2, height: radius * 2 }}
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: rotationSpeed, ease: 'linear' }}
-      >
-        {cards.map((card, i) => {
-          const rotation = (i * 360) / cards.length;
-          return (
-            <div
-              key={i}
-              className="absolute w-12 h-16 rounded border border-zinc-800 bg-zinc-900/90 flex items-center justify-center font-mono text-[10px] font-bold text-zinc-400"
-              style={{
-                transform: `rotate(${rotation}deg) translateY(-${radius}px) rotate(-${rotation}deg)`
-              }}
-            >
-              {card}
-            </div>
-          );
-        })}
-      </motion.div>
-    </div>
-  );
-};
-
-const ReflectiveCardPreview = ({
-  glareOpacity,
-  tiltScale
-}: {
-  glareOpacity: number;
-  tiltScale: number;
-}) => {
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [glare, setGlare] = useState({ x: 50, y: 50 });
-  const [hovered, setHovered] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const px = (x / rect.width) * 100;
-    const py = (y / rect.height) * 100;
-    setGlare({ x: px, y: py });
-
-    const xc = rect.width / 2;
-    const yc = rect.height / 2;
-    const rx = ((yc - y) / yc) * tiltScale;
-    const ry = ((x - xc) / xc) * tiltScale;
-    setTilt({ x: rx, y: ry });
-  };
-
-  return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => {
-        setHovered(false);
-        setTilt({ x: 0, y: 0 });
-      }}
-      className="relative w-56 h-36 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer p-4 overflow-hidden flex flex-col justify-between shadow-2xl select-none"
-      style={{
-        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-        transition: hovered ? 'none' : 'transform 0.3s ease'
-      }}
-    >
-      {hovered && (
-        <div
-          className="absolute inset-0 pointer-events-none mix-blend-color-dodge transition-opacity duration-200"
-          style={{
-            background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,${glareOpacity}) 0%, transparent 60%)`
-          }}
-        />
-      )}
-      <div className="flex justify-between items-center">
-        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Reflective Card</span>
-        <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
-      </div>
-      <div className="space-y-1">
-        <span className="text-xs font-mono font-bold text-white block">METALLIC OVERLAY</span>
-        <span className="text-[9px] font-mono text-zinc-400 block leading-tight">Light sheen glare effect follows cursor movement.</span>
-      </div>
-    </div>
-  );
-};
-
-const DockPreview = ({
-  maxZoom,
-  dockPadding
-}: {
-  maxZoom: number;
-  dockPadding: number;
-}) => {
-  const icons = ['📄', '📂', '⚡', '🎨', '🔧', '⚙️'];
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-
-  return (
-    <div
-      className="flex items-end gap-3 bg-zinc-950/80 border border-zinc-900 rounded-2xl shadow-xl select-none transition-all duration-200"
-      style={{ padding: `${dockPadding}px` }}
-    >
-      {icons.map((icon, idx) => {
-        let scale = 1.0;
-        if (hoveredIdx !== null) {
-          const diff = Math.abs(idx - hoveredIdx);
-          if (diff === 0) scale = maxZoom;
-          else if (diff === 1) scale = 1 + (maxZoom - 1) * 0.5;
-        }
-
-        return (
-          <motion.div
-            key={idx}
-            onMouseEnter={() => setHoveredIdx(idx)}
-            onMouseLeave={() => setHoveredIdx(null)}
-            animate={{ scale }}
-            transition={{ type: 'spring', stiffness: 280, damping: 15 }}
-            className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800/80 flex items-center justify-center text-lg cursor-pointer hover:border-zinc-700 shadow-md"
-          >
-            {icon}
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-};
-
-const SpotlightCardPreview = ({
-  spotlightSize,
-  spotlightColor
-}: {
-  spotlightSize: number;
-  spotlightColor: string;
-}) => {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [hovered, setHovered] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
-
-  return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="relative w-56 h-36 rounded-xl border border-zinc-800 bg-zinc-950 p-4 flex flex-col justify-between overflow-hidden shadow-2xl cursor-pointer select-none"
-    >
-      {hovered && (
-        <div
-          className="absolute pointer-events-none rounded-full blur-[50px] opacity-15"
-          style={{
-            left: mousePos.x - spotlightSize / 2,
-            top: mousePos.y - spotlightSize / 2,
-            width: spotlightSize,
-            height: spotlightSize,
-            backgroundColor: spotlightColor
-          }}
-        />
-      )}
-      <div className="flex justify-between items-center">
-        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Spotlight Container</span>
-        <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-      </div>
-      <div>
-        <span className="text-xs font-mono font-bold text-white block">RADIAL SPOTLIGHT</span>
-        <span className="text-[9px] font-mono text-zinc-400 block leading-tight mt-1">Light mask coordinates follow the pointer smoothly.</span>
-      </div>
-    </div>
-  );
-};
-
-const BorderGlowPreview = ({
-  glowSpeed,
-  glowColor
-}: {
-  glowSpeed: number;
-  glowColor: string;
-}) => {
-  return (
-    <div className="relative w-56 h-36 rounded-xl overflow-hidden p-[1px] select-none shadow-2xl">
-      <div
-        className="absolute inset-[-1000%] animate-spin"
-        style={{
-          background: `conic-gradient(from 0deg, transparent 40%, ${glowColor} 50%, transparent 60%, ${glowColor} 100%)`,
-          animationDuration: `${glowSpeed}s`
-        }}
-      />
-      <div className="relative w-full h-full rounded-xl bg-zinc-950 p-4 flex flex-col justify-between">
-        <div className="flex justify-between items-center">
-          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">NEON GLOW BORDER</span>
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-        </div>
-        <div>
-          <span className="text-xs font-mono font-bold text-white block">CONIC SHADER</span>
-          <span className="text-[9px] font-mono text-zinc-400 block leading-tight mt-1">Continuous animated gradient neon border lines.</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const CardSwapPreview = ({
-  rotationTilt
-}: {
-  rotationTilt: number;
-}) => {
-  const cards = ['Premium Dashboards', 'OKLCH Systems', 'Shader Libraries'];
-  const [index, setIndex] = useState(0);
-
-  return (
-    <div
-      onClick={() => setIndex(prev => (prev + 1) % cards.length)}
-      className="relative h-40 w-56 flex items-center justify-center select-none cursor-pointer"
-    >
-      <AnimatePresence mode="popLayout">
-        <motion.div
-          key={index}
-          initial={{ scale: 0.8, y: -20, opacity: 0 }}
-          animate={{ scale: 1, y: 0, opacity: 1, rotate: rotationTilt }}
-          exit={{ scale: 0.9, y: 30, opacity: 0, rotate: -rotationTilt * 1.5 }}
-          transition={{ type: 'spring', stiffness: 220, damping: 18 }}
-          className="absolute w-48 h-32 rounded-xl border border-zinc-800 bg-zinc-900 p-4 flex flex-col justify-between shadow-2xl"
-        >
-          <div className="flex justify-between items-center">
-            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Swap Deck</span>
-            <div className="text-[9px] font-mono text-zinc-500">#{index + 1}</div>
-          </div>
-          <span className="text-xs font-mono font-bold text-white leading-relaxed">{cards[index]}</span>
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-};
-
-// MASTER COMPONENT
 export default function ComponentsPage() {
   const [activeAnimId, setActiveAnimId] = useState<string>('animated-list');
   const [activeTab, setActiveTab] = useState<ComponentTab>('preview');
@@ -892,491 +151,2149 @@ export default function ComponentsPage() {
   // SOURCE CODE GENERATOR
   const generateSourceCode = (): string => {
     if (exportTab === 'usage') {
-      return `import React from 'react';
-import ${activeConfig.name.replace(/\s+/g, '')} from './${activeConfig.name.replace(/\s+/g, '')}';
+      switch (activeAnimId) {
+        case 'animated-list':
+          return `import AnimatedList from './AnimatedList';
 
 export default function Demo() {
+  const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5', 'Item 6', 'Item 7', 'Item 8', 'Item 9', 'Item 10'];
+
   return (
-    <div className="flex items-center justify-center min-h-[350px] bg-black text-white p-6">
-      <${activeConfig.name.replace(/\s+/g, '')} 
-        ${Object.entries(controlValues)
-          .map(([k, v]) => `${k}={${typeof v === 'string' ? `"${v}"` : v}}`)
-          .join('\n        ')}
+    <div className="flex items-center justify-center min-h-[300px] bg-black text-white p-6">
+      <AnimatedList
+        items={items}
+        onItemSelect={(item, index) => console.log(item, index)}
+        showGradients={${controlValues.showGradients !== false}}
+        enableArrowNavigation={${controlValues.enableArrowNavigation !== false}}
+        displayScrollbar={${controlValues.displayScrollbar !== false}}
+        initialSelectedIndex={${controlValues.initialSelectedIndex !== undefined ? controlValues.initialSelectedIndex : -1}}
       />
     </div>
   );
 }`;
+
+        case 'scroll-stack':
+          return `import ScrollStack, { ScrollStackItem } from './ScrollStack';
+
+export default function Demo() {
+  return (
+    <ScrollStack
+      itemDistance={${controlValues.itemDistance ?? 100}}
+      itemScale={${controlValues.itemScale ?? 0.03}}
+      itemStackDistance={${controlValues.itemStackDistance ?? 30}}
+      baseScale={${controlValues.baseScale ?? 0.85}}
+      rotationAmount={${controlValues.rotationAmount ?? 0}}
+      blurAmount={${controlValues.blurAmount ?? 0}}
+    >
+      <ScrollStackItem>
+        <h2>Card 1</h2>
+        <p>This is the first card in the stack</p>
+      </ScrollStackItem>
+      <ScrollStackItem>
+        <h2>Card 2</h2>
+        <p>This is the second card in the stack</p>
+      </ScrollStackItem>
+      <ScrollStackItem>
+        <h2>Card 3</h2>
+        <p>This is the third card in the stack</p>
+      </ScrollStackItem>
+    </ScrollStack>
+  );
+}`;
+
+        case 'bubble-menu':
+          return `import BubbleMenu from './BubbleMenu';
+
+export default function Demo() {
+  const items = [
+    { label: 'home', href: '#', ariaLabel: 'Home', rotation: -8, hoverStyles: { bgColor: '#3b82f6', textColor: '#ffffff' } },
+    { label: 'about', href: '#', ariaLabel: 'About', rotation: 8, hoverStyles: { bgColor: '#10b981', textColor: '#ffffff' } },
+    { label: 'projects', href: '#', ariaLabel: 'Projects', rotation: 8, hoverStyles: { bgColor: '#f59e0b', textColor: '#ffffff' } },
+    { label: 'contact', href: '#', ariaLabel: 'Contact', rotation: -8, hoverStyles: { bgColor: '#8b5cf6', textColor: '#ffffff' } }
+  ];
+
+  return (
+    <BubbleMenu
+      logo={<span style={{ fontWeight: 700 }}>RB</span>}
+      items={items}
+      menuBg="${controlValues.menuBg || '#ffffff'}"
+      menuContentColor="${controlValues.menuContentColor || '#111111'}"
+      useFixedPosition={false}
+      animationEase="back.out(1.5)"
+      animationDuration={${controlValues.animationDuration ?? 0.5}}
+      staggerDelay={${controlValues.staggerDelay ?? 0.12}}
+    />
+  );
+}`;
+
+        case 'magic-bento':
+          return `import MagicBento from './MagicBento';
+
+export default function Demo() {
+  return (
+    <MagicBento 
+      textAutoHide={${controlValues.textAutoHide !== false}}
+      enableStars={${controlValues.enableStars !== false}}
+      enableSpotlight={${controlValues.enableSpotlight !== false}}
+      enableBorderGlow={${controlValues.enableBorderGlow !== false}}
+      enableTilt={${controlValues.enableTilt === true}}
+      enableMagnetism={${controlValues.enableMagnetism !== false}}
+      clickEffect={${controlValues.clickEffect !== false}}
+      spotlightRadius={${controlValues.spotlightRadius ?? 300}}
+      particleCount={${controlValues.particleCount ?? 12}}
+      glowColor="${hexToRgbStr(controlValues.glowColor || '#8400ff')}"
+    />
+  );
+}`;
+      }
+    }
+
+    if (exportTab === 'css') {
+      switch (activeAnimId) {
+        case 'animated-list':
+          return `.scroll-list-container {
+  position: relative;
+  width: 500px;
+}
+
+.scroll-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.scroll-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-list::-webkit-scrollbar-track {
+  background: #120F17;
+}
+
+.scroll-list::-webkit-scrollbar-thumb {
+  background: #2F293A;
+  border-radius: 4px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.item {
+  padding: 16px;
+  background-color: #2F293A;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.item.selected {
+  background-color: #2F293A;
+}
+
+.item-text {
+  color: white;
+  margin: 0;
+}
+
+.top-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: linear-gradient(to bottom, #120F17, transparent);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.bottom-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to top, #120F17, transparent);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}`;
+
+        case 'scroll-stack':
+          return `.scroll-stack-scroller {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: visible;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+.scroll-stack-inner {
+  padding: 20vh 5rem 50rem;
+  min-height: 100vh;
+}
+
+.scroll-stack-card-wrapper {
+  position: relative;
+}
+
+.scroll-stack-card {
+  transform-origin: top center;
+  will-change: transform, filter;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+  height: 20rem;
+  width: 100%;
+  margin: 30px 0;
+  padding: 3rem;
+  border-radius: 40px;
+  box-sizing: border-box;
+  /* Improve mobile performance */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  position: relative;
+}
+
+.scroll-stack-end {
+  width: 100%;
+  height: 1px;
+}`;
+
+        case 'bubble-menu':
+          return `.bubble-menu {
+  left: 0;
+  right: 0;
+  top: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 2em;
+  pointer-events: none;
+  z-index: 99;
+}
+
+.bubble-menu.fixed {
+  position: fixed;
+}
+
+.bubble-menu.absolute {
+  position: absolute;
+}
+
+.bubble-menu .bubble {
+  --bubble-size: 48px;
+  width: var(--bubble-size);
+  height: var(--bubble-size);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.bubble-menu .logo-bubble,
+.bubble-menu .toggle-bubble {
+  will-change: transform;
+}
+
+.bubble-menu .logo-bubble {
+  width: auto;
+  min-height: var(--bubble-size);
+  height: var(--bubble-size);
+  padding: 0 16px;
+  border-radius: calc(var(--bubble-size) / 2);
+  gap: 8px;
+}
+
+.bubble-menu .toggle-bubble {
+  width: var(--bubble-size);
+  height: var(--bubble-size);
+}
+
+.bubble-menu .bubble-logo {
+  max-height: 60%;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.bubble-menu .logo-content {
+  --logo-max-height: 60%;
+  --logo-max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 100%;
+}
+
+.bubble-menu .logo-content > .bubble-logo,
+.bubble-menu .logo-content > img,
+.bubble-menu .logo-content > svg {
+  max-height: var(--logo-max-height);
+  max-width: var(--logo-max-width);
+}
+
+.bubble-menu .menu-btn {
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.bubble-menu .menu-line {
+  width: 26px;
+  height: 2px;
+  background: #111;
+  border-radius: 2px;
+  display: block;
+  margin: 0 auto;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+  transform-origin: center;
+}
+
+.bubble-menu .menu-line + .menu-line {
+  margin-top: 6px;
+}
+
+.bubble-menu .menu-btn.open .menu-line:first-child {
+  transform: translateY(4px) rotate(45deg);
+}
+
+.bubble-menu .menu-btn.open .menu-line:last-child {
+  transform: translateY(-4px) rotate(-45deg);
+}
+
+@media (min-width: 768px) {
+  .bubble-menu .bubble {
+    --bubble-size: 56px;
+  }
+
+  .bubble-menu .logo-bubble {
+    padding: 0 16px;
+  }
+}
+
+.bubble-menu-items {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 98;
+}
+
+.bubble-menu-items.fixed {
+  position: fixed;
+}
+
+.bubble-menu-items.absolute {
+  position: absolute;
+}
+
+.bubble-menu-items .pill-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  row-gap: 4px;
+  width: 100%;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+  pointer-events: auto;
+  justify-content: stretch;
+}
+
+.bubble-menu-items .pill-list .pill-spacer {
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+}
+
+.bubble-menu-items .pill-list .pill-col {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  flex: 0 0 calc(100% / 3);
+  box-sizing: border-box;
+}
+
+.bubble-menu-items .pill-list .pill-col:nth-child(4):nth-last-child(2) {
+  margin-left: calc(100% / 6);
+}
+
+.bubble-menu-items .pill-list .pill-col:nth-child(4):last-child {
+  margin-left: calc(100% / 3);
+}
+
+.bubble-menu-items .pill-link {
+  --pill-bg: #ffffff;
+  --pill-color: #111;
+  --pill-border: rgba(0, 0, 0, 0.12);
+  --item-rot: 0deg;
+  --pill-min-h: 160px;
+  --hover-bg: #f3f4f6;
+  --hover-color: #111;
+  width: 100%;
+  min-height: var(--pill-min-h);
+  padding: clamp(1.5rem, 3vw, 8rem) 0;
+  font-size: clamp(1.5rem, 4vw, 4rem);
+  font-weight: 400;
+  line-height: 0;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  color: var(--pill-color);
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
+  will-change: transform;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  height: 10px;
+}
+
+@media (min-width: 900px) {
+  .bubble-menu-items .pill-link {
+    transform: rotate(var(--item-rot));
+  }
+
+  .bubble-menu-items .pill-link:hover {
+    transform: rotate(var(--item-rot)) scale(1.06);
+    background: var(--hover-bg);
+    color: var(--hover-color);
+  }
+
+  .bubble-menu-items .pill-link:active {
+    transform: rotate(var(--item-rot)) scale(0.94);
+  }
+}
+
+.bubble-menu-items .pill-link .pill-label {
+  display: inline-block;
+  will-change: transform, opacity;
+  height: 1.2em;
+  line-height: 1.2;
+}
+
+@media (max-width: 899px) {
+  .bubble-menu-items {
+    padding-top: 0px;
+    align-items: flex-start;
+    padding-top: 120px;
+  }
+
+  .bubble-menu-items .pill-list {
+    row-gap: 16px;
+  }
+
+  .bubble-menu-items .pill-list .pill-col {
+    flex: 0 0 100%;
+    margin-left: 0 !important;
+    overflow: visible;
+  }
+
+  .bubble-menu-items .pill-link {
+    font-size: clamp(1.2rem, 3vw, 4rem);
+    padding: clamp(1rem, 2vw, 2rem) 0;
+    min-height: 80px;
+  }
+
+  .bubble-menu-items .pill-link:hover {
+    transform: scale(1.06);
+    background: var(--hover-bg);
+    color: var(--hover-color);
+  }
+
+  .bubble-menu-items .pill-link:active {
+    transform: scale(0.94);
+  }
+}
+`;
+
+        case 'magic-bento':
+          return `:root {
+  --hue: 27;
+  --sat: 69%;
+  --white: hsl(0, 0%, 100%);
+  --purple-primary: rgba(132, 0, 255, 1);
+  --purple-glow: rgba(132, 0, 255, 0.2);
+  --purple-border: rgba(132, 0, 255, 0.8);
+  --border-color: #2F293A;
+  --background-dark: #120F17;
+  color-scheme: light dark;
+}
+
+.card-grid {
+  display: grid;
+  gap: 0.5em;
+  padding: 0.75em;
+  max-width: 54em;
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.5rem);
+}
+
+.magic-bento-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  aspect-ratio: 4/3;
+  min-height: 200px;
+  width: 100%;
+  max-width: 100%;
+  padding: 1.25em;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--background-dark);
+  font-weight: 300;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  --glow-x: 50%;
+  --glow-y: 50%;
+  --glow-intensity: 0;
+  --glow-radius: 200px;
+}
+
+.magic-bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.magic-bento-card__header,
+.magic-bento-card__content {
+  display: flex;
+  position: relative;
+  color: var(--white);
+}
+
+.magic-bento-card__header {
+  gap: 0.75em;
+  justify-content: space-between;
+}
+
+.magic-bento-card__content {
+  flex-direction: column;
+}
+
+.magic-bento-card__label {
+  font-size: 16px;
+}
+
+.magic-bento-card__title,
+.magic-bento-card__description {
+  --clamp-title: 1;
+  --clamp-desc: 2;
+}
+
+.magic-bento-card__title {
+  font-weight: 400;
+  font-size: 16px;
+  margin: 0 0 0.25em;
+}
+
+.magic-bento-card__description {
+  font-size: 12px;
+  line-height: 1.2;
+  opacity: 0.9;
+}
+
+.magic-bento-card--text-autohide .magic-bento-card__title,
+.magic-bento-card--text-autohide .magic-bento-card__description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.magic-bento-card--text-autohide .magic-bento-card__title {
+  -webkit-line-clamp: var(--clamp-title);
+  line-clamp: var(--clamp-title);
+}
+
+.magic-bento-card--text-autohide .magic-bento-card__description {
+  -webkit-line-clamp: var(--clamp-desc);
+  line-clamp: var(--clamp-desc);
+}
+
+@media (max-width: 599px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+    width: 90%;
+    margin: 0 auto;
+    padding: 0.5em;
+  }
+
+  .magic-bento-card {
+    width: 100%;
+    min-height: 180px;
+  }
+}
+
+@media (min-width: 600px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .magic-bento-card:nth-child(3) {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  .magic-bento-card:nth-child(4) {
+    grid-column: 1 / span 2;
+    grid-row: 2 / span 2;
+  }
+
+  .magic-bento-card:nth-child(6) {
+    grid-column: 4;
+    grid-row: 3;
+  }
+}
+
+/* Border glow effect */
+.magic-bento-card--border-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 6px;
+  background: radial-gradient(
+    var(--glow-radius) circle at var(--glow-x) var(--glow-y),
+    rgba(132, 0, 255, calc(var(--glow-intensity) * 0.8)) 0%,
+    rgba(132, 0, 255, calc(var(--glow-intensity) * 0.4)) 30%,
+    transparent 60%
+  );
+  border-radius: inherit;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.magic-bento-card--border-glow:hover::after {
+  opacity: 1;
+}
+
+.magic-bento-card--border-glow:hover {
+  box-shadow:
+    0 4px 20px rgba(46, 24, 78, 0.4),
+    0 0 30px var(--purple-glow);
+}
+
+.particle-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.particle::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: rgba(132, 0, 255, 0.2);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.particle-container:hover {
+  box-shadow:
+    0 4px 20px rgba(46, 24, 78, 0.2),
+    0 0 30px var(--purple-glow);
+}
+
+/* Global spotlight styles */
+.global-spotlight {
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  z-index: 200 !important;
+  pointer-events: none;
+}
+
+.bento-section {
+  position: relative;
+  user-select: none;
+}`;
+      }
     }
 
     switch (activeAnimId) {
       case 'animated-list':
-        return `import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+        return `import React, { useRef, useState, useEffect, useCallback, ReactNode, MouseEventHandler, UIEvent } from 'react';
+import { motion, useInView } from 'framer-motion';
+import './AnimatedList.css';
 
-export default function AnimatedList({
-  fadeItems = ${controlValues.fadeItems !== false},
-  keyboardNav = ${controlValues.keyboardNav !== false},
-  showScrollbar = ${controlValues.showScrollbar === true}
-}) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'];
+interface AnimatedItemProps {
+  children: ReactNode;
+  delay?: number;
+  index: number;
+  onMouseEnter?: MouseEventHandler<HTMLDivElement>;
+  onClick?: MouseEventHandler<HTMLDivElement>;
+}
 
-  useEffect(() => {
-    if (!keyboardNav) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActiveIdx(prev => (prev + 1) % items.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActiveIdx(prev => (prev - 1 + items.length) % items.length);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [keyboardNav, items.length]);
-
+const AnimatedItem: React.FC<AnimatedItemProps> = ({ children, delay = 0, index, onMouseEnter, onClick }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { amount: 0.5, once: false });
   return (
-    <div className="w-full max-w-sm flex flex-col gap-3 py-4 select-none">
-      <div className={\`max-h-72 overflow-y-auto px-2 space-y-3 \${showScrollbar ? 'scrollbar-machined' : 'scrollbar-none'}\`}>
-        {items.map((item, idx) => (
-          <motion.div
-            key={idx}
-            onClick={() => setActiveIdx(idx)}
-            initial={fadeItems ? { opacity: 0, y: 15 } : { y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1, duration: 0.3 }}
-            className={\`w-full px-4 py-4 rounded-lg border text-sm font-mono transition-all duration-150 cursor-pointer \${
-              activeIdx === idx
-                ? 'bg-zinc-800/80 border-violet-500 text-white font-bold'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800/40'
-            }\`}
-          >
-            {item}
-          </motion.div>
-        ))}
-      </div>
-    </div>
+    <motion.div
+      ref={ref}
+      data-index={index}
+      onMouseEnter={onMouseEnter}
+      onClick={onClick}
+      initial={{ scale: 0.7, opacity: 0 }}
+      animate={inView ? { scale: 1, opacity: 1 } : { scale: 0.7, opacity: 0 }}
+      transition={{ duration: 0.2, delay }}
+      style={{ marginBottom: '1rem', cursor: 'pointer' }}
+    >
+      {children}
+    </motion.div>
   );
-}`;
+};
 
-      case 'scroll-stack':
-        return `import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+interface AnimatedListProps {
+  items?: string[];
+  onItemSelect?: (item: string, index: number) => void;
+  showGradients?: boolean;
+  enableArrowNavigation?: boolean;
+  className?: string;
+  itemClassName?: string;
+  displayScrollbar?: boolean;
+  initialSelectedIndex?: number;
+}
 
-export default function ScrollStack({
-  cardScale = ${controlValues.cardScale || 0.9},
-  spreadOffset = ${controlValues.spreadOffset || 45}
-}) {
-  const cards = ['Dashboard Layout', 'Analytical Graphs', 'User Profiles', 'Project Milestones'];
-  const [hoveredIdx, setHoveredIdx] = useState(null);
+export const AnimatedList: React.FC<AnimatedListProps> = ({
+  items = [
+    'Item 1',
+    'Item 2',
+    'Item 3',
+    'Item 4',
+    'Item 5',
+    'Item 6',
+    'Item 7',
+    'Item 8',
+    'Item 9',
+    'Item 10',
+    'Item 11',
+    'Item 12',
+    'Item 13',
+    'Item 14',
+    'Item 15'
+  ],
+  onItemSelect,
+  showGradients = true,
+  enableArrowNavigation = true,
+  className = '',
+  itemClassName = '',
+  displayScrollbar = true,
+  initialSelectedIndex = -1
+}) => {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(initialSelectedIndex);
+  const [keyboardNav, setKeyboardNav] = useState<boolean>(false);
+  const [topGradientOpacity, setTopGradientOpacity] = useState<number>(0);
+  const [bottomGradientOpacity, setBottomGradientOpacity] = useState<number>(1);
 
-  return (
-    <div className="relative h-60 w-64 flex items-center justify-center select-none">
-      {cards.map((card, idx) => {
-        const isHovered = hoveredIdx === idx;
-        const offset = hoveredIdx !== null ? (idx - hoveredIdx) * spreadOffset : idx * 12;
-        const scale = hoveredIdx !== null ? (isHovered ? 1.0 : cardScale) : 1 - idx * 0.04;
-        const rotate = hoveredIdx !== null ? (isHovered ? 0 : (idx - hoveredIdx) * 2) : idx * 1.5;
-
-        return (
-          <motion.div
-            key={idx}
-            onMouseEnter={() => setHoveredIdx(idx)}
-            onMouseLeave={() => setHoveredIdx(null)}
-            animate={{ y: offset, scale, rotate, zIndex: isHovered ? 50 : 10 - idx }}
-            transition={{ type: 'spring', stiffness: 220, damping: 20 }}
-            className={\`absolute w-56 h-36 rounded-xl border p-4 bg-zinc-900 border-zinc-800 cursor-pointer flex flex-col justify-between shadow-2xl \${
-              isHovered ? 'border-violet-500/50 bg-zinc-800/90' : ''
-            }\`}
-          >
-            <span className="text-[10px] font-mono text-zinc-500 uppercase">Card #{idx + 1}</span>
-            <span className="text-xs font-mono font-bold text-white">{card}</span>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-}`;
-
-      case 'bubble-menu':
-        return `import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-
-export default function BubbleMenu({
-  accentColor = "${controlValues.accentColor || '#a78bfa'}",
-  dampening = ${controlValues.dampening || 12}
-}) {
-  const tabs = ['Home', 'Analytics', 'Settings', 'Profile'];
-  const [activeTab, setActiveTab] = useState(0);
-  const [hoveredTab, setHoveredTab] = useState(null);
-  const [rects, setRects] = useState([]);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const elements = containerRef.current.children;
-    const list = [];
-    for (let i = 0; i < elements.length; i++) {
-      list.push(elements[i].getBoundingClientRect());
-    }
-    setRects(list);
+  const handleItemMouseEnter = useCallback((index: number) => {
+    setSelectedIndex(index);
   }, []);
 
-  const containerRect = containerRef.current?.getBoundingClientRect();
-  const activeRect = rects[hoveredTab !== null ? hoveredTab : activeTab];
+  const handleItemClick = useCallback(
+    (item: string, index: number) => {
+      setSelectedIndex(index);
+      if (onItemSelect) {
+        onItemSelect(item, index);
+      }
+    },
+    [onItemSelect]
+  );
+
+  const handleScroll = useCallback((e: UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    const { scrollTop, scrollHeight, clientHeight } = target;
+    setTopGradientOpacity(Math.min(scrollTop / 50, 1));
+    const bottomDistance = scrollHeight - (scrollTop + clientHeight);
+    setBottomGradientOpacity(scrollHeight <= clientHeight ? 0 : Math.min(bottomDistance / 50, 1));
+  }, []);
+
+  useEffect(() => {
+    if (!enableArrowNavigation) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+        e.preventDefault();
+        setKeyboardNav(true);
+        setSelectedIndex(prev => Math.min(prev + 1, items.length - 1));
+      } else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+        e.preventDefault();
+        setKeyboardNav(true);
+        setSelectedIndex(prev => Math.max(prev - 1, 0));
+      } else if (e.key === 'Enter') {
+        if (selectedIndex >= 0 && selectedIndex < items.length) {
+          e.preventDefault();
+          if (onItemSelect) {
+            onItemSelect(items[selectedIndex], selectedIndex);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [items, selectedIndex, onItemSelect, enableArrowNavigation]);
+
+  useEffect(() => {
+    if (!keyboardNav || selectedIndex < 0 || !listRef.current) return;
+    const container = listRef.current;
+    const selectedItem = container.querySelector(\`[data-index="\${selectedIndex}"]\`) as HTMLElement | null;
+    if (selectedItem) {
+      const extraMargin = 50;
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+      const itemTop = selectedItem.offsetTop;
+      const itemBottom = itemTop + selectedItem.offsetHeight;
+      if (itemTop < containerScrollTop + extraMargin) {
+        container.scrollTo({ top: itemTop - extraMargin, behavior: 'smooth' });
+      } else if (itemBottom > containerScrollTop + containerHeight - extraMargin) {
+        container.scrollTo({
+          top: itemBottom - containerHeight + extraMargin,
+          behavior: 'smooth'
+        });
+      }
+    }
+    setKeyboardNav(false);
+  }, [selectedIndex, keyboardNav]);
 
   return (
-    <div className="relative p-2 bg-zinc-950 border border-zinc-900 rounded-xl flex items-center gap-1">
-      {activeRect && containerRect && (
-        <motion.div
-          animate={{
-            left: activeRect.left - containerRect.left,
-            width: activeRect.width,
-            height: activeRect.height
-          }}
-          transition={{
-            type: 'spring',
-            stiffness: 300 - dampening * 5,
-            damping: 18 + dampening * 0.15
-          }}
-          className="absolute rounded-lg opacity-25"
-          style={{ backgroundColor: accentColor, top: activeRect.top - containerRect.top }}
-        />
-      )}
-      <div ref={containerRef} className="flex items-center gap-1 relative z-10">
-        {tabs.map((tab, idx) => (
-          <button
-            key={idx}
-            onClick={() => setActiveTab(idx)}
-            onMouseEnter={() => setHoveredTab(idx)}
-            onMouseLeave={() => setHoveredTab(null)}
-            className="px-4 py-1.5 rounded-lg text-xs font-mono text-zinc-500 hover:text-zinc-300"
+    <div className={\`scroll-list-container \${className}\`}>
+      <div ref={listRef} className={\`scroll-list \${!displayScrollbar ? 'no-scrollbar' : ''}\`} onScroll={handleScroll}>
+        {items.map((item, index) => (
+          <AnimatedItem
+            key={index}
+            delay={0.1}
+            index={index}
+            onMouseEnter={() => handleItemMouseEnter(index)}
+            onClick={() => handleItemClick(item, index)}
           >
-            {tab}
-          </button>
+            <div className={\`item \${selectedIndex === index ? 'selected' : ''} \${itemClassName}\`}>
+              <p className="item-text">{item}</p>
+            </div>
+          </AnimatedItem>
         ))}
       </div>
+      {showGradients && (
+        <>
+          <div className="top-gradient" style={{ opacity: topGradientOpacity }}></div>
+          <div className="bottom-gradient" style={{ opacity: bottomGradientOpacity }}></div>
+        </>
+      )}
     </div>
+  );
+};
+
+export default AnimatedList;`;
+
+      case 'scroll-stack':
+        return `import React, { useLayoutEffect, useRef, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import Lenis from 'lenis';
+import './ScrollStack.css';
+
+export interface ScrollStackItemProps {
+  itemClassName?: string;
+  children: ReactNode;
+}
+
+export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({ children, itemClassName = '' }) => (
+  <div className={\`scroll-stack-card \${itemClassName}\`.trim()}>{children}</div>
+);
+
+interface ScrollStackProps {
+  className?: string;
+  children: ReactNode;
+  itemDistance?: number;
+  itemScale?: number;
+  itemStackDistance?: number;
+  stackPosition?: string;
+  scaleEndPosition?: string;
+  baseScale?: number;
+  scaleDuration?: number;
+  rotationAmount?: number;
+  blurAmount?: number;
+  useWindowScroll?: boolean;
+  onStackComplete?: () => void;
+}
+
+const ScrollStack: React.FC<ScrollStackProps> = ({
+  children,
+  className = '',
+  itemDistance = 100,
+  itemScale = 0.03,
+  itemStackDistance = 30,
+  stackPosition = '20%',
+  scaleEndPosition = '10%',
+  baseScale = 0.85,
+  scaleDuration = 0.5,
+  rotationAmount = 0,
+  blurAmount = 0,
+  useWindowScroll = false,
+  onStackComplete
+}) => {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const stackCompletedRef = useRef(false);
+  const animationFrameRef = useRef<number | null>(null);
+  const lenisRef = useRef<Lenis | null>(null);
+  const cardsRef = useRef<HTMLElement[]>([]);
+  const lastTransformsRef = useRef(new Map<number, any>());
+  const isUpdatingRef = useRef(false);
+
+  const calculateProgress = useCallback((scrollTop: number, start: number, end: number) => {
+    if (scrollTop < start) return 0;
+    if (scrollTop > end) return 1;
+    return (scrollTop - start) / (end - start);
+  }, []);
+
+  const parsePercentage = useCallback((value: string | number, containerHeight: number) => {
+    if (typeof value === 'string' && value.includes('%')) {
+      return (parseFloat(value) / 100) * containerHeight;
+    }
+    return parseFloat(value as string);
+  }, []);
+
+  const getScrollData = useCallback(() => {
+    if (useWindowScroll) {
+      return {
+        scrollTop: window.scrollY,
+        containerHeight: window.innerHeight,
+        scrollContainer: document.documentElement
+      };
+    } else {
+      const scroller = scrollerRef.current;
+      return {
+        scrollTop: scroller!.scrollTop,
+        containerHeight: scroller!.clientHeight,
+        scrollContainer: scroller!
+      };
+    }
+  }, [useWindowScroll]);
+
+  const getElementOffset = useCallback(
+    (element: HTMLElement) => {
+      if (useWindowScroll) {
+        const rect = element.getBoundingClientRect();
+        return rect.top + window.scrollY;
+      } else {
+        return element.offsetTop;
+      }
+    },
+    [useWindowScroll]
+  );
+
+  const updateCardTransforms = useCallback(() => {
+    if (!cardsRef.current.length || isUpdatingRef.current) return;
+
+    isUpdatingRef.current = true;
+
+    const { scrollTop, containerHeight } = getScrollData();
+    const stackPositionPx = parsePercentage(stackPosition, containerHeight);
+    const scaleEndPositionPx = parsePercentage(scaleEndPosition, containerHeight);
+
+    const endElement = useWindowScroll
+      ? (document.querySelector('.scroll-stack-end') as HTMLElement)
+      : (scrollerRef.current?.querySelector('.scroll-stack-end') as HTMLElement);
+
+    const endElementTop = endElement ? getElementOffset(endElement) : 0;
+
+    cardsRef.current.forEach((card, i) => {
+      if (!card) return;
+
+      const cardTop = getElementOffset(card);
+      const triggerStart = cardTop - stackPositionPx - itemStackDistance * i;
+      const triggerEnd = cardTop - scaleEndPositionPx;
+      const pinStart = cardTop - stackPositionPx - itemStackDistance * i;
+      const pinEnd = endElementTop - containerHeight / 2;
+
+      const scaleProgress = calculateProgress(scrollTop, triggerStart, triggerEnd);
+      const targetScale = baseScale + i * itemScale;
+      const scale = 1 - scaleProgress * (1 - targetScale);
+      const rotation = rotationAmount ? i * rotationAmount * scaleProgress : 0;
+
+      let blur = 0;
+      if (blurAmount) {
+        let topCardIndex = 0;
+        for (let j = 0; j < cardsRef.current.length; j++) {
+          const jCardTop = getElementOffset(cardsRef.current[j]);
+          const jTriggerStart = jCardTop - stackPositionPx - itemStackDistance * j;
+          if (scrollTop >= jTriggerStart) {
+            topCardIndex = j;
+          }
+        }
+
+        if (i < topCardIndex) {
+          const depthInStack = topCardIndex - i;
+          blur = Math.max(0, depthInStack * blurAmount);
+        }
+      }
+
+      let translateY = 0;
+      const isPinned = scrollTop >= pinStart && scrollTop <= pinEnd;
+
+      if (isPinned) {
+        translateY = scrollTop - cardTop + stackPositionPx + itemStackDistance * i;
+      } else if (scrollTop > pinEnd) {
+        translateY = pinEnd - cardTop + stackPositionPx + itemStackDistance * i;
+      }
+
+      const newTransform = {
+        translateY: Math.round(translateY * 100) / 100,
+        scale: Math.round(scale * 1000) / 1000,
+        rotation: Math.round(rotation * 100) / 100,
+        blur: Math.round(blur * 100) / 100
+      };
+
+      const lastTransform = lastTransformsRef.current.get(i);
+      const hasChanged =
+        !lastTransform ||
+        Math.abs(lastTransform.translateY - newTransform.translateY) > 0.1 ||
+        Math.abs(lastTransform.scale - newTransform.scale) > 0.001 ||
+        Math.abs(lastTransform.rotation - newTransform.rotation) > 0.1 ||
+        Math.abs(lastTransform.blur - newTransform.blur) > 0.1;
+
+      if (hasChanged) {
+        const transform = \`translate3d(0, \${newTransform.translateY}px, 0) scale(\${newTransform.scale}) rotate(\${newTransform.rotation}deg)\`;
+        const filter = newTransform.blur > 0 ? \`blur(\${newTransform.blur}px)\` : '';
+
+        card.style.transform = transform;
+        card.style.filter = filter;
+
+        lastTransformsRef.current.set(i, newTransform);
+      }
+
+      if (i === cardsRef.current.length - 1) {
+        const isInView = scrollTop >= pinStart && scrollTop <= pinEnd;
+        if (isInView && !stackCompletedRef.current) {
+          stackCompletedRef.current = true;
+          onStackComplete?.();
+        } else if (!isInView && stackCompletedRef.current) {
+          stackCompletedRef.current = false;
+        }
+      }
+    });
+
+    isUpdatingRef.current = false;
+  }, [
+    itemScale,
+    itemStackDistance,
+    stackPosition,
+    scaleEndPosition,
+    baseScale,
+    rotationAmount,
+    blurAmount,
+    useWindowScroll,
+    onStackComplete,
+    calculateProgress,
+    parsePercentage,
+    getScrollData,
+    getElementOffset
+  ]);
+
+  const handleScroll = useCallback(() => {
+    updateCardTransforms();
+  }, [updateCardTransforms]);
+
+  const setupLenis = useCallback(() => {
+    if (useWindowScroll) {
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        touchMultiplier: 2,
+        infinite: false,
+        wheelMultiplier: 1,
+        lerp: 0.1,
+        syncTouch: true,
+        syncTouchLerp: 0.075
+      });
+
+      lenis.on('scroll', handleScroll);
+
+      const raf = (time: number) => {
+        lenis.raf(time);
+        animationFrameRef.current = requestAnimationFrame(raf);
+      };
+      animationFrameRef.current = requestAnimationFrame(raf);
+
+      lenisRef.current = lenis;
+      return lenis;
+    } else {
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+
+      const lenis = new Lenis({
+        wrapper: scroller,
+        content: scroller.querySelector('.scroll-stack-inner') as HTMLElement,
+        duration: 1.2,
+        easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        touchMultiplier: 2,
+        infinite: false,
+        gestureOrientation: 'vertical',
+        wheelMultiplier: 1,
+        lerp: 0.1,
+        syncTouch: true,
+        syncTouchLerp: 0.075
+      });
+
+      lenis.on('scroll', handleScroll);
+
+      const raf = (time: number) => {
+        lenis.raf(time);
+        animationFrameRef.current = requestAnimationFrame(raf);
+      };
+      animationFrameRef.current = requestAnimationFrame(raf);
+
+      lenisRef.current = lenis;
+      return lenis;
+    }
+  }, [handleScroll, useWindowScroll]);
+
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const cards = Array.from(
+      useWindowScroll
+        ? document.querySelectorAll('.scroll-stack-card')
+        : scroller.querySelectorAll('.scroll-stack-card')
+    ) as HTMLElement[];
+
+    cardsRef.current = cards;
+    const transformsCache = lastTransformsRef.current;
+
+    cards.forEach((card, i) => {
+      if (i < cards.length - 1) {
+        card.style.marginBottom = \`\${itemDistance}px\`;
+      }
+      card.style.willChange = 'transform, filter';
+      card.style.transformOrigin = 'top center';
+      card.style.backfaceVisibility = 'hidden';
+      card.style.transform = 'translateZ(0)';
+      card.style.webkitTransform = 'translateZ(0)';
+      card.style.perspective = '1000px';
+      card.style.webkitPerspective = '1000px';
+    });
+
+    setupLenis();
+
+    updateCardTransforms();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (lenisRef.current) {
+        lenisRef.current.destroy();
+      }
+      stackCompletedRef.current = false;
+      cardsRef.current = [];
+      transformsCache.clear();
+      isUpdatingRef.current = false;
+    };
+  }, [
+    itemDistance,
+    itemScale,
+    itemStackDistance,
+    stackPosition,
+    scaleEndPosition,
+    baseScale,
+    scaleDuration,
+    rotationAmount,
+    blurAmount,
+    useWindowScroll,
+    onStackComplete,
+    setupLenis,
+    updateCardTransforms
+  ]);
+
+  return (
+    <div className={\`scroll-stack-scroller \${className}\`.trim()} ref={scrollerRef}>
+      <div className="scroll-stack-inner">
+        {children}
+        {/* Spacer so the last pin can release cleanly */}
+        <div className="scroll-stack-end" />
+      </div>
+    </div>
+  );
+};
+
+export default ScrollStack;`;
+
+      case 'bubble-menu':
+        return `import type { CSSProperties, ReactNode } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { gsap } from 'gsap';
+import './BubbleMenu.css';
+
+type MenuItem = {
+  label: string;
+  href: string;
+  ariaLabel?: string;
+  rotation?: number;
+  hoverStyles?: {
+    bgColor?: string;
+    textColor?: string;
+  };
+};
+
+export type BubbleMenuProps = {
+  logo: ReactNode | string;
+  onMenuClick?: (open: boolean) => void;
+  className?: string;
+  style?: CSSProperties;
+  menuAriaLabel?: string;
+  menuBg?: string;
+  menuContentColor?: string;
+  useFixedPosition?: boolean;
+  items?: MenuItem[];
+  animationEase?: string;
+  animationDuration?: number;
+  staggerDelay?: number;
+};
+
+const DEFAULT_ITEMS: MenuItem[] = [
+  {
+    label: 'home',
+    href: '#',
+    ariaLabel: 'Home',
+    rotation: -8,
+    hoverStyles: { bgColor: '#3b82f6', textColor: '#ffffff' }
+  },
+  {
+    label: 'about',
+    href: '#',
+    ariaLabel: 'About',
+    rotation: 8,
+    hoverStyles: { bgColor: '#10b981', textColor: '#ffffff' }
+  },
+  {
+    label: 'projects',
+    href: '#',
+    ariaLabel: 'Documentation',
+    rotation: 8,
+    hoverStyles: { bgColor: '#f59e0b', textColor: '#ffffff' }
+  },
+  {
+    label: 'blog',
+    href: '#',
+    ariaLabel: 'Blog',
+    rotation: 8,
+    hoverStyles: { bgColor: '#ef4444', textColor: '#ffffff' }
+  },
+  {
+    label: 'contact',
+    href: '#',
+    ariaLabel: 'Contact',
+    rotation: -8,
+    hoverStyles: { bgColor: '#8b5cf6', textColor: '#ffffff' }
+  }
+];
+
+export default function BubbleMenu({
+  logo,
+  onMenuClick,
+  className,
+  style,
+  menuAriaLabel = 'Toggle menu',
+  menuBg = '#fff',
+  menuContentColor = '#111',
+  useFixedPosition = false,
+  items,
+  animationEase = 'back.out(1.5)',
+  animationDuration = 0.5,
+  staggerDelay = 0.12
+}: BubbleMenuProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const bubblesRef = useRef<HTMLAnchorElement[]>([]);
+  const labelRefs = useRef<HTMLSpanElement[]>([]);
+
+  const menuItems = items?.length ? items : DEFAULT_ITEMS;
+  const containerClassName = ['bubble-menu', useFixedPosition ? 'fixed' : 'absolute', className]
+    .filter(Boolean)
+    .join(' ');
+
+  const handleToggle = () => {
+    const nextState = !isMenuOpen;
+    if (nextState) setShowOverlay(true);
+    setIsMenuOpen(nextState);
+    onMenuClick?.(nextState);
+  };
+
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    const bubbles = bubblesRef.current.filter(Boolean);
+    const labels = labelRefs.current.filter(Boolean);
+
+    if (!overlay || !bubbles.length) return;
+
+    if (isMenuOpen) {
+      gsap.set(overlay, { display: 'flex' });
+      gsap.killTweensOf([...bubbles, ...labels]);
+      gsap.set(bubbles, { scale: 0, transformOrigin: '50% 50%' });
+      gsap.set(labels, { y: 24, autoAlpha: 0 });
+
+      bubbles.forEach((bubble, i) => {
+        const delay = i * staggerDelay + gsap.utils.random(-0.05, 0.05);
+        const tl = gsap.timeline({ delay });
+
+        tl.to(bubble, {
+          scale: 1,
+          duration: animationDuration,
+          ease: animationEase
+        });
+        if (labels[i]) {
+          tl.to(
+            labels[i],
+            {
+              y: 0,
+              autoAlpha: 1,
+              duration: animationDuration,
+              ease: 'power3.out'
+            },
+            \`-=\${animationDuration * 0.9}\`
+          );
+        }
+      });
+    } else if (showOverlay) {
+      gsap.killTweensOf([...bubbles, ...labels]);
+      gsap.to(labels, {
+        y: 24,
+        autoAlpha: 0,
+        duration: 0.2,
+        ease: 'power3.in'
+      });
+      gsap.to(bubbles, {
+        scale: 0,
+        duration: 0.2,
+        ease: 'power3.in',
+        onComplete: () => {
+          gsap.set(overlay, { display: 'none' });
+          setShowOverlay(false);
+        }
+      });
+    }
+  }, [isMenuOpen, showOverlay, animationEase, animationDuration, staggerDelay]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (isMenuOpen) {
+        const bubbles = bubblesRef.current.filter(Boolean);
+        const isDesktop = window.innerWidth >= 900;
+
+        bubbles.forEach((bubble, i) => {
+          const item = menuItems[i];
+          if (bubble && item) {
+            const rotation = isDesktop ? (item.rotation ?? 0) : 0;
+            gsap.set(bubble, { rotation });
+          }
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isMenuOpen, menuItems]);
+
+  return (
+    <>
+      <nav className={containerClassName} style={style} aria-label="Main navigation">
+        <div className="bubble logo-bubble" aria-label="Logo" style={{ background: menuBg }}>
+          <span className="logo-content">
+            {typeof logo === 'string' ? <img src={logo} alt="Logo" className="bubble-logo" /> : logo}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          className={\`bubble toggle-bubble menu-btn \${isMenuOpen ? 'open' : ''}\`}
+          onClick={handleToggle}
+          aria-label={menuAriaLabel}
+          aria-pressed={isMenuOpen}
+          style={{ background: menuBg }}
+        >
+          <span className="menu-line" style={{ background: menuContentColor }} />
+          <span className="menu-line short" style={{ background: menuContentColor }} />
+        </button>
+      </nav>
+      {showOverlay && (
+        <div
+          ref={overlayRef}
+          className={\`bubble-menu-items \${useFixedPosition ? 'fixed' : 'absolute'}\`}
+          aria-hidden={!isMenuOpen}
+        >
+          <ul className="pill-list" role="menu" aria-label="Menu links">
+            {menuItems.map((item, idx) => (
+              <li key={idx} role="none" className="pill-col">
+                <a
+                  role="menuitem"
+                  href={item.href}
+                  aria-label={item.ariaLabel || item.label}
+                  className="pill-link"
+                  style={
+                    {
+                      '--item-rot': \`\${item.rotation ?? 0}deg\`,
+                      '--pill-bg': menuBg,
+                      '--pill-color': menuContentColor,
+                      '--hover-bg': item.hoverStyles?.bgColor || '#f3f4f6',
+                      '--hover-color': item.hoverStyles?.textColor || menuContentColor
+                    } as CSSProperties
+                  }
+                  ref={el => {
+                    if (el) bubblesRef.current[idx] = el;
+                  }}
+                >
+                  <span
+                    className="pill-label"
+                    ref={el => {
+                      if (el) labelRefs.current[idx] = el;
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
   );
 }`;
 
       case 'magic-bento':
-        return `import React, { useState, useRef } from 'react';
+        return `import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { gsap } from 'gsap';
+import './MagicBento.css';
 
-export default function MagicBento({
-  glowColor = "${controlValues.glowColor || '#8b5cf6'}",
-  tiltStrength = ${controlValues.tiltStrength || 8}
-}) {
-  const cards = [
-    { title: 'Overview', col: 'col-span-2', text: 'Realtime telemetry pipeline monitoring.' },
-    { title: 'Deploy', col: 'col-span-1', text: 'Vercel edge server push.' },
-    { title: 'Console', col: 'col-span-1', text: 'Staging environment compiler log streams.' },
-    { title: 'Settings', col: 'col-span-2', text: 'OKLCH system variables config.' }
-  ];
+export interface BentoCardProps {
+  color?: string;
+  title?: string;
+  description?: string;
+  label?: string;
+  textAutoHide?: boolean;
+  disableAnimations?: boolean;
+}
+
+export interface BentoProps {
+  textAutoHide?: boolean;
+  enableStars?: boolean;
+  enableSpotlight?: boolean;
+  enableBorderGlow?: boolean;
+  disableAnimations?: boolean;
+  spotlightRadius?: number;
+  particleCount?: number;
+  enableTilt?: boolean;
+  glowColor?: string;
+  clickEffect?: boolean;
+  enableMagnetism?: boolean;
+}
+
+const DEFAULT_PARTICLE_COUNT = 12;
+const DEFAULT_SPOTLIGHT_RADIUS = 300;
+const DEFAULT_GLOW_COLOR = '132, 0, 255';
+const MOBILE_BREAKPOINT = 768;
+
+const cardData: BentoCardProps[] = [
+  { color: '#120F17', title: 'Analytics', description: 'Track user behavior', label: 'Insights' },
+  { color: '#120F17', title: 'Dashboard', description: 'Centralized data view', label: 'Overview' },
+  { color: '#120F17', title: 'Collaboration', description: 'Work together seamlessly', label: 'Teamwork' },
+  { color: '#120F17', title: 'Automation', description: 'Streamline workflows', label: 'Efficiency' },
+  { color: '#120F17', title: 'Integration', description: 'Connect favorite tools', label: 'Connectivity' },
+  { color: '#120F17', title: 'Security', description: 'Enterprise-grade protection', label: 'Protection' }
+];
+
+const createParticleElement = (x: number, y: number, color: string = DEFAULT_GLOW_COLOR): HTMLDivElement => {
+  const el = document.createElement('div');
+  el.className = 'particle';
+  el.style.cssText = \`
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(\${color}, 1);
+    box-shadow: 0 0 6px rgba(\${color}, 0.6);
+    pointer-events: none;
+    z-index: 100;
+    left: \${x}px;
+    top: \${y}px;
+  \`;
+  return el;
+};
+
+const calculateSpotlightValues = (radius: number) => ({
+  proximity: radius * 0.5,
+  fadeDistance: radius * 0.75
+});
+
+const updateCardGlowProperties = (card: HTMLElement, mouseX: number, mouseY: number, glow: number, radius: number) => {
+  const rect = card.getBoundingClientRect();
+  const relativeX = ((mouseX - rect.left) / rect.width) * 100;
+  const relativeY = ((mouseY - rect.top) / rect.height) * 100;
+
+  card.style.setProperty('--glow-x', \`\${relativeX}%\`);
+  card.style.setProperty('--glow-y', \`\${relativeY}%\`);
+  card.style.setProperty('--glow-intensity', glow.toString());
+  card.style.setProperty('--glow-radius', \`\${radius}px\`);
+};
+
+const ParticleCard: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+  disableAnimations?: boolean;
+  style?: React.CSSProperties;
+  particleCount?: number;
+  glowColor?: string;
+  enableTilt?: boolean;
+  clickEffect?: boolean;
+  enableMagnetism?: boolean;
+}> = ({
+  children,
+  className = '',
+  disableAnimations = false,
+  style,
+  particleCount = DEFAULT_PARTICLE_COUNT,
+  glowColor = DEFAULT_GLOW_COLOR,
+  enableTilt = true,
+  clickEffect = false,
+  enableMagnetism = false
+}) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const particlesRef = useRef<HTMLDivElement[]>([]);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const isHoveredRef = useRef(false);
+  const memoizedParticles = useRef<HTMLDivElement[]>([]);
+  const particlesInitialized = useRef(false);
+  const magnetismAnimationRef = useRef<gsap.core.Tween | null>(null);
+
+  const initializeParticles = useCallback(() => {
+    if (particlesInitialized.current || !cardRef.current) return;
+
+    const { width, height } = cardRef.current.getBoundingClientRect();
+    memoizedParticles.current = Array.from({ length: particleCount }, () =>
+      createParticleElement(Math.random() * width, Math.random() * height, glowColor)
+    );
+    particlesInitialized.current = true;
+  }, [particleCount, glowColor]);
+
+  const clearAllParticles = useCallback(() => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+    magnetismAnimationRef.current?.kill();
+
+    particlesRef.current.forEach(particle => {
+      gsap.to(particle, {
+        scale: 0,
+        opacity: 0,
+        duration: 0.3,
+        ease: 'back.in(1.7)',
+        onComplete: () => {
+          particle.parentNode?.removeChild(particle);
+        }
+      });
+    });
+    particlesRef.current = [];
+  }, []);
+
+  const animateParticles = useCallback(() => {
+    if (!cardRef.current || !isHoveredRef.current) return;
+
+    if (!particlesInitialized.current) {
+      initializeParticles();
+    }
+
+    memoizedParticles.current.forEach((particle, index) => {
+      const timeoutId = setTimeout(() => {
+        if (!isHoveredRef.current || !cardRef.current) return;
+
+        const clone = particle.cloneNode(true) as HTMLDivElement;
+        cardRef.current.appendChild(clone);
+        particlesRef.current.push(clone);
+
+        gsap.fromTo(clone, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(1.7)' });
+
+        gsap.to(clone, {
+          x: (Math.random() - 0.5) * 100,
+          y: (Math.random() - 0.5) * 100,
+          rotation: Math.random() * 360,
+          duration: 2 + Math.random() * 2,
+          ease: 'none',
+          repeat: -1,
+          yoyo: true
+        });
+
+        gsap.to(clone, {
+          opacity: 0.3,
+          duration: 1.5,
+          ease: 'power2.inOut',
+          repeat: -1,
+          yoyo: true
+        });
+      }, index * 100);
+
+      timeoutsRef.current.push(timeoutId);
+    });
+  }, [initializeParticles]);
+
+  useEffect(() => {
+    if (disableAnimations || !cardRef.current) return;
+
+    const element = cardRef.current;
+
+    const handleMouseEnter = () => {
+      isHoveredRef.current = true;
+      animateParticles();
+
+      if (enableTilt) {
+        gsap.to(element, {
+          rotateX: 5,
+          rotateY: 5,
+          duration: 0.3,
+          ease: 'power2.out',
+          transformPerspective: 1000
+        });
+      }
+    };
+
+    const handleMouseLeave = () => {
+      isHoveredRef.current = false;
+      clearAllParticles();
+
+      if (enableTilt) {
+        gsap.to(element, {
+          rotateX: 0,
+          rotateY: 0,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
+
+      if (enableMagnetism) {
+        gsap.to(element, {
+          x: 0,
+          y: 0,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!enableTilt && !enableMagnetism) return;
+
+      const rect = element.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      if (enableTilt) {
+        const rotateX = ((y - centerY) / centerY) * -10;
+        const rotateY = ((x - centerX) / centerX) * 10;
+
+        gsap.to(element, {
+          rotateX,
+          rotateY,
+          duration: 0.1,
+          ease: 'power2.out',
+          transformPerspective: 1000
+        });
+      }
+
+      if (enableMagnetism) {
+        const magnetX = (x - centerX) * 0.05;
+        const magnetY = (y - centerY) * 0.05;
+
+        magnetismAnimationRef.current = gsap.to(element, {
+          x: magnetX,
+          y: magnetY,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      if (!clickEffect) return;
+
+      const rect = element.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const maxDistance = Math.max(
+        Math.hypot(x, y),
+        Math.hypot(x - rect.width, y),
+        Math.hypot(x, y - rect.height),
+        Math.hypot(x - rect.width, y - rect.height)
+      );
+
+      const ripple = document.createElement('div');
+      ripple.style.cssText = \`
+        position: absolute;
+        width: \${maxDistance * 2}px;
+        height: \${maxDistance * 2}px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(\${glowColor}, 0.4) 0%, rgba(\${glowColor}, 0.2) 30%, transparent 70%);
+        left: \${x - maxDistance}px;
+        top: \${y - maxDistance}px;
+        pointer-events: none;
+        z-index: 1000;
+      \`;
+
+      element.appendChild(ripple);
+
+      gsap.fromTo(
+        ripple,
+        {
+          scale: 0,
+          opacity: 1
+        },
+        {
+          scale: 1,
+          opacity: 0,
+          duration: 0.8,
+          ease: 'power2.out',
+          onComplete: () => ripple.remove()
+        }
+      );
+    };
+
+    element.addEventListener('mouseenter', handleMouseEnter);
+    element.addEventListener('mouseleave', handleMouseLeave);
+    element.addEventListener('mousemove', handleMouseMove);
+    element.addEventListener('click', handleClick);
+
+    return () => {
+      isHoveredRef.current = false;
+      element.removeEventListener('mouseenter', handleMouseEnter);
+      element.removeEventListener('mouseleave', handleMouseLeave);
+      element.removeEventListener('mousemove', handleMouseMove);
+      element.removeEventListener('click', handleClick);
+      clearAllParticles();
+    };
+  }, [animateParticles, clearAllParticles, disableAnimations, enableTilt, enableMagnetism, clickEffect, glowColor]);
 
   return (
-    <div className="grid grid-cols-3 gap-3 w-full max-w-md p-4">
-      {cards.map((card, idx) => {
-        const itemRef = useRef(null);
-        const [tilt, setTilt] = useState({ x: 0, y: 0 });
-        const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-        const [isHovered, setIsHovered] = useState(false);
-
-        const handleMouseMove = (e) => {
-          if (!itemRef.current) return;
-          const rect = itemRef.current.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          setMousePos({ x, y });
-
-          const xc = rect.width / 2;
-          const yc = rect.height / 2;
-          setTilt({
-            x: ((y - yc) / yc) * tiltStrength,
-            y: -((x - xc) / xc) * tiltStrength
-          });
-        };
-
-        return (
-          <div
-            key={idx}
-            ref={itemRef}
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => {
-              setIsHovered(false);
-              setTilt({ x: 0, y: 0 });
-            }}
-            className={\`relative rounded-xl border border-zinc-900 bg-zinc-950 p-4 overflow-hidden \${card.col}\`}
-            style={{
-              transform: \`perspective(1000px) rotateX(\${tilt.x}deg) rotateY(\${tilt.y}deg)\`,
-              transition: isHovered ? 'none' : 'transform 0.4s ease'
-            }}
-          >
-            {isHovered && (
-              <div
-                className="absolute pointer-events-none rounded-full blur-[60px] opacity-25"
-                style={{
-                  left: mousePos.x - 70,
-                  top: mousePos.y - 70,
-                  width: 140,
-                  height: 140,
-                  backgroundColor: glowColor
-                }}
-              />
-            )}
-            <span className="text-[10px] font-bold font-mono text-zinc-500 uppercase">{card.title}</span>
-            <p className="text-[11px] font-mono text-zinc-300 mt-2">{card.text}</p>
-          </div>
-        );
-      })}
+    <div
+      ref={cardRef}
+      className={\`\${className} particle-container\`}
+      style={{ ...style, position: 'relative', overflow: 'hidden' }}
+    >
+      {children}
     </div>
   );
-}`;
+};
 
-      case 'circular-gallery':
-        return `import React from 'react';
-import { motion } from 'framer-motion';
+const GlobalSpotlight: React.FC<{
+  gridRef: React.RefObject<HTMLDivElement | null>;
+  disableAnimations?: boolean;
+  enabled?: boolean;
+  spotlightRadius?: number;
+  glowColor?: string;
+}> = ({
+  gridRef,
+  disableAnimations = false,
+  enabled = true,
+  spotlightRadius = DEFAULT_SPOTLIGHT_RADIUS,
+  glowColor = DEFAULT_GLOW_COLOR
+}) => {
+  const spotlightRef = useRef<HTMLDivElement | null>(null);
+  const isInsideSection = useRef(false);
 
-export default function CircularGallery({
-  radius = ${controlValues.radius || 110},
-  rotationSpeed = ${controlValues.rotationSpeed || 15}
-}) {
-  const cards = ['Img 1', 'Img 2', 'Img 3', 'Img 4', 'Img 5', 'Img 6'];
+  useEffect(() => {
+    if (disableAnimations || !gridRef?.current || !enabled) return;
+
+    const spotlight = document.createElement('div');
+    spotlight.className = 'global-spotlight';
+    spotlight.style.cssText = \`
+      position: fixed;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      pointer-events: none;
+      background: radial-gradient(circle,
+        rgba(\${glowColor}, 0.15) 0%,
+        rgba(\${glowColor}, 0.08) 15%,
+        rgba(\${glowColor}, 0.04) 25%,
+        rgba(\${glowColor}, 0.02) 40%,
+        rgba(\${glowColor}, 0.01) 65%,
+        transparent 70%
+      );
+      z-index: 200;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: screen;
+    \`;
+    document.body.appendChild(spotlight);
+    spotlightRef.current = spotlight;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!spotlightRef.current || !gridRef.current) return;
+
+      const section = gridRef.current.closest('.bento-section');
+      const rect = section?.getBoundingClientRect();
+      const mouseInside =
+        rect && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+
+      isInsideSection.current = mouseInside || false;
+      const cards = gridRef.current.querySelectorAll('.magic-bento-card');
+
+      if (!mouseInside) {
+        gsap.to(spotlightRef.current, {
+          opacity: 0,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+        cards.forEach(card => {
+          (card as HTMLElement).style.setProperty('--glow-intensity', '0');
+        });
+        return;
+      }
+
+      const { proximity, fadeDistance } = calculateSpotlightValues(spotlightRadius);
+      let minDistance = Infinity;
+
+      cards.forEach(card => {
+        const cardElement = card as HTMLElement;
+        const cardRect = cardElement.getBoundingClientRect();
+        const centerX = cardRect.left + cardRect.width / 2;
+        const centerY = cardRect.top + cardRect.height / 2;
+        const distance =
+          Math.hypot(e.clientX - centerX, e.clientY - centerY) - Math.max(cardRect.width, cardRect.height) / 2;
+        const effectiveDistance = Math.max(0, distance);
+
+        minDistance = Math.min(minDistance, effectiveDistance);
+
+        let glowIntensity = 0;
+        if (effectiveDistance <= proximity) {
+          glowIntensity = 1;
+        } else if (effectiveDistance <= fadeDistance) {
+          glowIntensity = (fadeDistance - effectiveDistance) / (fadeDistance - proximity);
+        }
+
+        updateCardGlowProperties(cardElement, e.clientX, e.clientY, glowIntensity, spotlightRadius);
+      });
+
+      gsap.to(spotlightRef.current, {
+        left: e.clientX,
+        top: e.clientY,
+        duration: 0.1,
+        ease: 'power2.out'
+      });
+
+      const targetOpacity =
+        minDistance <= proximity
+          ? 0.8
+          : minDistance <= fadeDistance
+            ? ((fadeDistance - minDistance) / (fadeDistance - proximity)) * 0.8
+            : 0;
+
+      gsap.to(spotlightRef.current, {
+        opacity: targetOpacity,
+        duration: targetOpacity > 0 ? 0.2 : 0.5,
+        ease: 'power2.out'
+      });
+    };
+
+    const handleMouseLeave = () => {
+      isInsideSection.current = false;
+      gridRef.current?.querySelectorAll('.magic-bento-card').forEach(card => {
+        (card as HTMLElement).style.setProperty('--glow-intensity', '0');
+      });
+      if (spotlightRef.current) {
+        gsap.to(spotlightRef.current, {
+          opacity: 0,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      spotlightRef.current?.parentNode?.removeChild(spotlightRef.current);
+    };
+  }, [gridRef, disableAnimations, enabled, spotlightRadius, glowColor]);
+
+  return null;
+};
+
+const BentoCardGrid: React.FC<{
+  children: React.ReactNode;
+  gridRef?: React.RefObject<HTMLDivElement | null>;
+}> = ({ children, gridRef }) => (
+  <div className="card-grid bento-section" ref={gridRef}>
+    {children}
+  </div>
+);
+
+const useMobileDetection = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
+export const MagicBento: React.FC<BentoProps> = ({
+  textAutoHide = true,
+  enableStars = true,
+  enableSpotlight = true,
+  enableBorderGlow = true,
+  disableAnimations = false,
+  spotlightRadius = DEFAULT_SPOTLIGHT_RADIUS,
+  particleCount = DEFAULT_PARTICLE_COUNT,
+  enableTilt = false,
+  glowColor = DEFAULT_GLOW_COLOR,
+  clickEffect = true,
+  enableMagnetism = true
+}) => {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const isMobile = useMobileDetection();
+  const shouldDisableAnimations = disableAnimations || isMobile;
 
   return (
-    <div className="relative h-64 w-64 flex items-center justify-center overflow-hidden">
-      <motion.div
-        className="relative flex items-center justify-center"
-        style={{ width: radius * 2, height: radius * 2 }}
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: rotationSpeed, ease: 'linear' }}
-      >
-        {cards.map((card, i) => {
-          const rotation = (i * 360) / cards.length;
+    <>
+      {enableSpotlight && (
+        <GlobalSpotlight
+          gridRef={gridRef}
+          disableAnimations={shouldDisableAnimations}
+          enabled={enableSpotlight}
+          spotlightRadius={spotlightRadius}
+          glowColor={glowColor}
+        />
+      )}
+
+      <BentoCardGrid gridRef={gridRef}>
+        {cardData.map((card, index) => {
+          const baseClassName = \`magic-bento-card \${textAutoHide ? 'magic-bento-card--text-autohide' : ''} \${enableBorderGlow ? 'magic-bento-card--border-glow' : ''}\`;
+          const cardProps = {
+            className: baseClassName,
+            style: {
+              backgroundColor: card.color,
+              '--glow-color': glowColor
+            } as React.CSSProperties
+          };
+
+          if (enableStars) {
+            return (
+              <ParticleCard
+                key={index}
+                {...cardProps}
+                disableAnimations={shouldDisableAnimations}
+                particleCount={particleCount}
+                glowColor={glowColor}
+                enableTilt={enableTilt}
+                clickEffect={clickEffect}
+                enableMagnetism={enableMagnetism}
+              >
+                <div className="magic-bento-card__header">
+                  <div className="magic-bento-card__label">{card.label}</div>
+                </div>
+                <div className="magic-bento-card__content">
+                  <h2 className="magic-bento-card__title">{card.title}</h2>
+                  <p className="magic-bento-card__description">{card.description}</p>
+                </div>
+              </ParticleCard>
+            );
+          }
+
           return (
             <div
-              key={i}
-              className="absolute w-12 h-16 rounded border border-zinc-800 bg-zinc-900 flex items-center justify-center font-mono text-[10px] text-zinc-400"
-              style={{
-                transform: \`rotate(\${rotation}deg) translateY(-\${radius}px) rotate(-\${rotation}deg)\`
+              key={index}
+              {...cardProps}
+              ref={el => {
+                if (!el) return;
+
+                const handleMouseMove = (e: MouseEvent) => {
+                  if (shouldDisableAnimations) return;
+
+                  const rect = el.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  const centerX = rect.width / 2;
+                  const centerY = rect.height / 2;
+
+                  if (enableTilt) {
+                    const rotateX = ((y - centerY) / centerY) * -10;
+                    const rotateY = ((x - centerX) / centerX) * 10;
+                    gsap.to(el, {
+                      rotateX,
+                      rotateY,
+                      duration: 0.1,
+                      ease: 'power2.out',
+                      transformPerspective: 1000
+                    });
+                  }
+
+                  if (enableMagnetism) {
+                    const magnetX = (x - centerX) * 0.05;
+                    const magnetY = (y - centerY) * 0.05;
+                    gsap.to(el, {
+                      x: magnetX,
+                      y: magnetY,
+                      duration: 0.3,
+                      ease: 'power2.out'
+                    });
+                  }
+                };
+
+                const handleMouseLeave = () => {
+                  if (shouldDisableAnimations) return;
+
+                  if (enableTilt) {
+                    gsap.to(el, {
+                      rotateX: 0,
+                      rotateY: 0,
+                      duration: 0.3,
+                      ease: 'power2.out'
+                    });
+                  }
+
+                  if (enableMagnetism) {
+                    gsap.to(el, {
+                      x: 0,
+                      y: 0,
+                      duration: 0.3,
+                      ease: 'power2.out'
+                    });
+                  }
+                };
+
+                const handleClick = (e: MouseEvent) => {
+                  if (!clickEffect || shouldDisableAnimations) return;
+
+                  const rect = el.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+
+                  // Calculate the maximum distance from click point to any corner
+                  const maxDistance = Math.max(
+                    Math.hypot(x, y),
+                    Math.hypot(x - rect.width, y),
+                    Math.hypot(x, y - rect.height),
+                    Math.hypot(x - rect.width, y - rect.height)
+                  );
+
+                  const ripple = document.createElement('div');
+                  ripple.style.cssText = \`
+                    position: absolute;
+                    width: \${maxDistance * 2}px;
+                    height: \${maxDistance * 2}px;
+                    border-radius: 50%;
+                    background: radial-gradient(circle, rgba(\${glowColor}, 0.4) 0%, rgba(\${glowColor}, 0.2) 30%, transparent 70%);
+                    left: \${x - maxDistance}px;
+                    top: \${y - maxDistance}px;
+                    pointer-events: none;
+                    z-index: 1000;
+                  \`;
+
+                  el.appendChild(ripple);
+
+                  gsap.fromTo(
+                    ripple,
+                    {
+                      scale: 0,
+                      opacity: 1
+                    },
+                    {
+                      scale: 1,
+                      opacity: 0,
+                      duration: 0.8,
+                      ease: 'power2.out',
+                      onComplete: () => ripple.remove()
+                    }
+                  );
+                };
+
+                el.addEventListener('mousemove', handleMouseMove);
+                el.addEventListener('mouseleave', handleMouseLeave);
+                el.addEventListener('click', handleClick);
               }}
             >
-              {card}
+              <div className="magic-bento-card__header">
+                <div className="magic-bento-card__label">{card.label}</div>
+              </div>
+              <div className="magic-bento-card__content">
+                <h2 className="magic-bento-card__title">{card.title}</h2>
+                <p className="magic-bento-card__description">{card.description}</p>
+              </div>
             </div>
           );
         })}
-      </motion.div>
-    </div>
+      </BentoCardGrid>
+    </>
   );
-}`;
+};
 
-      case 'reflective-card':
-        return `import React, { useState, useRef } from 'react';
-
-export default function ReflectiveCard({
-  glareOpacity = ${controlValues.glareOpacity || 0.4},
-  tiltScale = ${controlValues.tiltScale || 15}
-}) {
-  const cardRef = useRef(null);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [glare, setGlare] = useState({ x: 50, y: 50 });
-  const [hovered, setHovered] = useState(false);
-
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setGlare({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
-    setTilt({
-      x: ((rect.height / 2 - y) / (rect.height / 2)) * tiltScale,
-      y: ((x - rect.width / 2) / (rect.width / 2)) * tiltScale
-    });
-  };
-
-  return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => {
-        setHovered(false);
-        setTilt({ x: 0, y: 0 });
-      }}
-      className="relative w-56 h-36 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer p-4 overflow-hidden flex flex-col justify-between shadow-2xl"
-      style={{
-        transform: \`perspective(1000px) rotateX(\${tilt.x}deg) rotateY(\${tilt.y}deg)\`,
-        transition: hovered ? 'none' : 'transform 0.3s ease'
-      }}
-    >
-      {hovered && (
-        <div
-          className="absolute inset-0 pointer-events-none mix-blend-color-dodge"
-          style={{
-            background: \`radial-gradient(circle at \${glare.x}% \${glare.y}%, rgba(255,255,255,\${glareOpacity}) 0%, transparent 60%)\`
-          }}
-        />
-      )}
-      <span className="text-[9px] font-mono text-zinc-500 font-bold">Reflective Card</span>
-      <span className="text-xs font-mono font-bold text-white block">METALLIC OVERLAY</span>
-    </div>
-  );
-}`;
-
-      case 'dock':
-        return `import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-
-export default function Dock({
-  maxZoom = ${controlValues.maxZoom || 1.6},
-  dockPadding = ${controlValues.dockPadding || 10}
-}) {
-  const icons = ['📄', '📂', '⚡', '🎨', '🔧', '⚙️'];
-  const [hoveredIdx, setHoveredIdx] = useState(null);
-
-  return (
-    <div
-      className="flex items-end gap-3 bg-zinc-950 border border-zinc-900 rounded-2xl shadow-xl"
-      style={{ padding: \`\${dockPadding}px\` }}
-    >
-      {icons.map((icon, idx) => {
-        let scale = 1.0;
-        if (hoveredIdx !== null) {
-          const diff = Math.abs(idx - hoveredIdx);
-          if (diff === 0) scale = maxZoom;
-          else if (diff === 1) scale = 1 + (maxZoom - 1) * 0.5;
-        }
-
-        return (
-          <motion.div
-            key={idx}
-            onMouseEnter={() => setHoveredIdx(idx)}
-            onMouseLeave={() => setHoveredIdx(null)}
-            animate={{ scale }}
-            transition={{ type: 'spring', stiffness: 280, damping: 15 }}
-            className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-lg cursor-pointer"
-          >
-            {icon}
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-}`;
-
-      case 'spotlight-card':
-        return `import React, { useState, useRef } from 'react';
-
-export default function SpotlightCard({
-  spotlightSize = ${controlValues.spotlightSize || 140},
-  spotlightColor = "${controlValues.spotlightColor || '#8b5cf6'}"
-}) {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [hovered, setHovered] = useState(false);
-  const cardRef = useRef(null);
-
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
-
-  return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="relative w-56 h-36 rounded-xl border border-zinc-800 bg-zinc-950 p-4 overflow-hidden shadow-2xl cursor-pointer"
-    >
-      {hovered && (
-        <div
-          className="absolute pointer-events-none rounded-full blur-[50px] opacity-15"
-          style={{
-            left: mousePos.x - spotlightSize / 2,
-            top: mousePos.y - spotlightSize / 2,
-            width: spotlightSize,
-            height: spotlightSize,
-            backgroundColor: spotlightColor
-          }}
-        />
-      )}
-      <span className="text-[9px] font-mono text-zinc-500 font-bold">Spotlight Container</span>
-      <span className="text-xs font-mono font-bold text-white block">RADIAL SPOTLIGHT</span>
-    </div>
-  );
-}`;
-
-      case 'border-glow':
-        return `import React from 'react';
-
-export default function BorderGlow({
-  glowSpeed = ${controlValues.glowSpeed || 3.5},
-  glowColor = "${controlValues.glowColor || '#a78bfa'}"
-}) {
-  return (
-    <div className="relative w-56 h-36 rounded-xl overflow-hidden p-[1px] shadow-2xl">
-      <div
-        className="absolute inset-[-1000%] animate-spin"
-        style={{
-          background: \`conic-gradient(from 0deg, transparent 40%, \${glowColor} 50%, transparent 60%, \${glowColor} 100%)\`,
-          animationDuration: \`\${glowSpeed}s\`
-        }}
-      />
-      <div className="relative w-full h-full rounded-xl bg-zinc-950 p-4 flex flex-col justify-between">
-        <span className="text-[9px] font-mono text-zinc-500 font-bold">NEON GLOW BORDER</span>
-        <span className="text-xs font-mono font-bold text-white block">CONIC SHADER</span>
-      </div>
-    </div>
-  );
-}`;
-
-      case 'card-swap':
-        return `import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-
-export default function CardSwap({
-  rotationTilt = ${controlValues.rotationTilt || 6}
-}) {
-  const cards = ['Premium Dashboards', 'OKLCH Systems', 'Shader Libraries'];
-  const [index, setIndex] = useState(0);
-
-  return (
-    <div
-      onClick={() => setIndex(prev => (prev + 1) % cards.length)}
-      className="relative h-40 w-56 flex items-center justify-center cursor-pointer"
-    >
-      <AnimatePresence mode="popLayout">
-        <motion.div
-          key={index}
-          initial={{ scale: 0.8, y: -20, opacity: 0 }}
-          animate={{ scale: 1, y: 0, opacity: 1, rotate: rotationTilt }}
-          exit={{ scale: 0.9, y: 30, opacity: 0, rotate: -rotationTilt * 1.5 }}
-          className="absolute w-48 h-32 rounded-xl border border-zinc-800 bg-zinc-900 p-4 flex flex-col justify-between shadow-2xl"
-        >
-          <span className="text-[9px] font-mono text-zinc-500 font-bold">Swap Deck</span>
-          <span className="text-xs font-mono font-bold text-white">{cards[index]}</span>
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-}`;
+export default MagicBento;`;
 
       default:
-        return `import React from 'react';
-import { motion } from 'framer-motion';
-
-// ${activeConfig.name} Component
-export default function ${activeConfig.name.replace(/\s+/g, '')}() {
-  return (
-    <div className="p-6 border border-zinc-900 rounded-xl bg-zinc-950 flex flex-col items-center justify-center select-none font-mono">
-      <span className="text-xs font-bold text-white">${activeConfig.name}</span>
-      <span className="text-[9px] text-zinc-500 mt-1">Component template ready for implementation.</span>
-    </div>
-  );
-}`;
+        return '';
     }
   };
 
@@ -1385,84 +2302,84 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}() {
     switch (activeAnimId) {
       case 'animated-list':
         return (
-          <AnimatedListPreview
-            fadeItems={controlValues.fadeItems !== false}
-            keyboardNav={controlValues.keyboardNav !== false}
-            showScrollbar={controlValues.showScrollbar === true}
-            triggerKey={triggerKey}
-          />
+          <div className="w-full max-w-sm flex items-center justify-center p-4">
+            <AnimatedList
+              key={triggerKey}
+              showGradients={controlValues.showGradients !== false}
+              enableArrowNavigation={controlValues.enableArrowNavigation !== false}
+              displayScrollbar={controlValues.displayScrollbar !== false}
+              initialSelectedIndex={controlValues.initialSelectedIndex !== undefined ? controlValues.initialSelectedIndex : -1}
+            />
+          </div>
         );
       case 'scroll-stack':
         return (
-          <ScrollStackPreview
-            cardScale={controlValues.cardScale !== undefined ? controlValues.cardScale : 0.9}
-            spreadOffset={controlValues.spreadOffset !== undefined ? controlValues.spreadOffset : 45}
-          />
+          <div className="w-full max-w-lg h-96 border border-zinc-900 bg-zinc-950/60 rounded-2xl overflow-hidden relative">
+            <ScrollStack
+              key={triggerKey}
+              itemDistance={controlValues.itemDistance !== undefined ? controlValues.itemDistance : 100}
+              itemScale={controlValues.itemScale !== undefined ? controlValues.itemScale : 0.03}
+              itemStackDistance={controlValues.itemStackDistance !== undefined ? controlValues.itemStackDistance : 30}
+              baseScale={controlValues.baseScale !== undefined ? controlValues.baseScale : 0.85}
+              rotationAmount={controlValues.rotationAmount !== undefined ? controlValues.rotationAmount : 0}
+              blurAmount={controlValues.blurAmount !== undefined ? controlValues.blurAmount : 0}
+              useWindowScroll={false}
+            >
+              <ScrollStackItem>
+                <div className="space-y-2">
+                  <h2 className="text-lg font-bold text-white font-mono uppercase tracking-wide">Card 1</h2>
+                  <p className="text-xs text-zinc-400 font-mono">This is the first card in the stack. Scroll down inside this frame to stack cards.</p>
+                </div>
+              </ScrollStackItem>
+              <ScrollStackItem>
+                <div className="space-y-2">
+                  <h2 className="text-lg font-bold text-white font-mono uppercase tracking-wide">Card 2</h2>
+                  <p className="text-xs text-zinc-400 font-mono">This is the second card in the stack. Cards dynamically shrink and blur as stack builds up.</p>
+                </div>
+              </ScrollStackItem>
+              <ScrollStackItem>
+                <div className="space-y-2">
+                  <h2 className="text-lg font-bold text-white font-mono uppercase tracking-wide">Card 3</h2>
+                  <p className="text-xs text-zinc-400 font-mono">This is the third card in the stack. Custom options allow adjusting spacing, scaling, and tilt angles.</p>
+                </div>
+              </ScrollStackItem>
+            </ScrollStack>
+          </div>
         );
       case 'bubble-menu':
         return (
-          <BubbleMenuPreview
-            accentColor={controlValues.accentColor || '#a78bfa'}
-            dampening={controlValues.dampening !== undefined ? controlValues.dampening : 12}
-          />
+          <div className="w-full h-80 flex items-center justify-center relative bg-zinc-950/20 border border-zinc-900 rounded-2xl overflow-hidden">
+            <BubbleMenu
+              key={triggerKey}
+              logo={<span className="font-extrabold text-white font-mono tracking-wider">RB</span>}
+              menuBg={controlValues.menuBg || '#ffffff'}
+              menuContentColor={controlValues.menuContentColor || '#111111'}
+              useFixedPosition={false}
+              animationDuration={controlValues.animationDuration !== undefined ? controlValues.animationDuration : 0.5}
+              staggerDelay={controlValues.staggerDelay !== undefined ? controlValues.staggerDelay : 0.12}
+            />
+          </div>
         );
       case 'magic-bento':
         return (
-          <MagicBentoPreview
-            glowColor={controlValues.glowColor || '#8b5cf6'}
-            tiltStrength={controlValues.tiltStrength !== undefined ? controlValues.tiltStrength : 8}
-          />
-        );
-      case 'circular-gallery':
-        return (
-          <CircularGalleryPreview
-            radius={controlValues.radius !== undefined ? controlValues.radius : 110}
-            rotationSpeed={controlValues.rotationSpeed !== undefined ? controlValues.rotationSpeed : 15}
-          />
-        );
-      case 'reflective-card':
-        return (
-          <ReflectiveCardPreview
-            glareOpacity={controlValues.glareOpacity !== undefined ? controlValues.glareOpacity : 0.4}
-            tiltScale={controlValues.tiltScale !== undefined ? controlValues.tiltScale : 15}
-          />
-        );
-      case 'dock':
-        return (
-          <DockPreview
-            maxZoom={controlValues.maxZoom !== undefined ? controlValues.maxZoom : 1.6}
-            dockPadding={controlValues.dockPadding !== undefined ? controlValues.dockPadding : 10}
-          />
-        );
-      case 'spotlight-card':
-        return (
-          <SpotlightCardPreview
-            spotlightSize={controlValues.spotlightSize !== undefined ? controlValues.spotlightSize : 140}
-            spotlightColor={controlValues.spotlightColor || '#8b5cf6'}
-          />
-        );
-      case 'border-glow':
-        return (
-          <BorderGlowPreview
-            glowSpeed={controlValues.glowSpeed !== undefined ? controlValues.glowSpeed : 3.5}
-            glowColor={controlValues.glowColor || '#a78bfa'}
-          />
-        );
-      case 'card-swap':
-        return (
-          <CardSwapPreview
-            rotationTilt={controlValues.rotationTilt !== undefined ? controlValues.rotationTilt : 6}
-          />
-        );
-      default:
-        return (
-          <div className="p-6 border border-zinc-900 rounded-xl bg-zinc-950/40 flex flex-col items-center justify-center select-none text-center max-w-xs font-mono">
-            <span className="text-xs font-bold text-white uppercase">{activeConfig.name}</span>
-            <span className="text-[9px] text-zinc-500 mt-2 leading-relaxed">
-              This layout ({activeConfig.id}) is fully initialized. Use the Code panel above to inspect or copy its default template.
-            </span>
+          <div className="w-full max-h-[380px] overflow-y-auto flex items-center justify-center p-4 border border-zinc-900 bg-zinc-950/40 rounded-2xl scrollbar-machined">
+            <MagicBento
+              key={triggerKey}
+              textAutoHide={controlValues.textAutoHide !== false}
+              enableStars={controlValues.enableStars !== false}
+              enableSpotlight={controlValues.enableSpotlight !== false}
+              enableBorderGlow={controlValues.enableBorderGlow !== false}
+              enableTilt={controlValues.enableTilt === true}
+              enableMagnetism={controlValues.enableMagnetism !== false}
+              clickEffect={controlValues.clickEffect !== false}
+              spotlightRadius={controlValues.spotlightRadius !== undefined ? controlValues.spotlightRadius : 300}
+              particleCount={controlValues.particleCount !== undefined ? controlValues.particleCount : 12}
+              glowColor={hexToRgbStr(controlValues.glowColor || '#8400ff')}
+            />
           </div>
         );
+      default:
+        return null;
     }
   };
 
@@ -1498,11 +2415,6 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}() {
                   />
                   <span className="text-[11px] font-semibold tracking-wide truncate">{comp.name}</span>
                 </div>
-                {comp.isNew && (
-                  <span className="px-1 py-0.5 rounded bg-violet-600/30 text-violet-300 border border-violet-500/20 text-[7px] font-bold uppercase tracking-wider scale-90">
-                    New
-                  </span>
-                )}
               </button>
             );
           })}
@@ -1587,6 +2499,15 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}() {
                     )}
                   >
                     Component Source (.tsx)
+                  </button>
+                  <button
+                    onClick={() => setExportTab('css')}
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] font-mono rounded cursor-pointer transition-colors",
+                      exportTab === 'css' ? "bg-zinc-900 text-white font-bold" : "text-zinc-500 hover:text-zinc-350"
+                    )}
+                  >
+                    Styles (.css)
                   </button>
                   <button
                     onClick={() => setExportTab('usage')}
