@@ -1559,19 +1559,696 @@ export default function Demo() {
 
     switch (activeAnimId) {
       case 'dock':
-        return `/* Source from Dock.tsx — see Full Component Source in the integration prompt */`;
+        return `'use client';
+
+import {
+  motion,
+  MotionValue,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  type SpringOptions,
+  AnimatePresence
+} from 'motion/react';
+import React, { Children, cloneElement, useEffect, useMemo, useRef, useState } from 'react';
+import './Dock.css';
+
+export type DockItemData = {
+  icon: React.ReactNode;
+  label: React.ReactNode;
+  onClick: () => void;
+  className?: string;
+};
+
+export type DockProps = {
+  items: DockItemData[];
+  className?: string;
+  distance?: number;
+  panelHeight?: number;
+  baseItemSize?: number;
+  dockHeight?: number;
+  magnification?: number;
+  spring?: SpringOptions;
+};
+
+type DockItemProps = {
+  className?: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  mouseX: MotionValue<number>;
+  spring: SpringOptions;
+  distance: number;
+  baseItemSize: number;
+  magnification: number;
+  label?: React.ReactNode;
+};
+
+function DockItem({
+  children, className = '', onClick, mouseX, spring, distance, magnification, baseItemSize, label
+}: DockItemProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isHovered = useMotionValue(0);
+  const mouseDistance = useTransform(mouseX, val => {
+    const rect = ref.current?.getBoundingClientRect() ?? { x: 0, width: baseItemSize };
+    return val - rect.x - baseItemSize / 2;
+  });
+  const targetSize = useTransform(mouseDistance, [-distance, 0, distance], [baseItemSize, magnification, baseItemSize]);
+  const size = useSpring(targetSize, spring);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
+  };
+  return (
+    <motion.div ref={ref} style={{ width: size, height: size }}
+      onHoverStart={() => isHovered.set(1)} onHoverEnd={() => isHovered.set(0)}
+      onFocus={() => isHovered.set(1)} onBlur={() => isHovered.set(0)}
+      onClick={onClick} onKeyDown={handleKeyDown}
+      className={\`dock-item \${className}\`} tabIndex={0} role="button"
+      aria-haspopup="true" aria-label={typeof label === 'string' ? label : undefined}
+    >
+      {Children.map(children, child =>
+        React.isValidElement(child)
+          ? cloneElement(child as React.ReactElement<{ isHovered?: MotionValue<number> }>, { isHovered })
+          : child
+      )}
+    </motion.div>
+  );
+}
+
+function DockLabel({ children, className = '', isHovered }: { className?: string; children: React.ReactNode; isHovered?: MotionValue<number> }) {
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    if (!isHovered) return;
+    const unsub = isHovered.on('change', v => setIsVisible(v === 1));
+    return () => unsub();
+  }, [isHovered]);
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: -10 }}
+          exit={{ opacity: 0, y: 0 }} transition={{ duration: 0.2 }}
+          className={\`dock-label \${className}\`} role="tooltip" style={{ x: '-50%' }}
+        >{children}</motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function DockIcon({ children, className = '' }: { className?: string; children: React.ReactNode; isHovered?: MotionValue<number> }) {
+  return <div className={\`dock-icon \${className}\`}>{children}</div>;
+}
+
+export default function Dock({
+  items, className = '',
+  spring = { mass: 0.1, stiffness: 150, damping: 12 },
+  magnification = 70, distance = 200, panelHeight = 68, dockHeight = 256, baseItemSize = 50
+}: DockProps) {
+  const mouseX = useMotionValue(Infinity);
+  const isHovered = useMotionValue(0);
+  const maxHeight = useMemo(() => Math.max(dockHeight, magnification + magnification / 2 + 4), [magnification, dockHeight]);
+  const heightRow = useTransform(isHovered, [0, 1], [panelHeight, maxHeight]);
+  const height = useSpring(heightRow, spring);
+  return (
+    <motion.div style={{ height, scrollbarWidth: 'none' }} className="dock-outer">
+      <motion.div
+        onMouseMove={({ pageX }) => { isHovered.set(1); mouseX.set(pageX); }}
+        onMouseLeave={() => { isHovered.set(0); mouseX.set(Infinity); }}
+        className={\`dock-panel \${className}\`} style={{ height: panelHeight }}
+        role="toolbar" aria-label="Application dock"
+      >
+        {items.map((item, index) => (
+          <DockItem key={index} onClick={item.onClick} className={item.className}
+            mouseX={mouseX} spring={spring} distance={distance}
+            magnification={magnification} baseItemSize={baseItemSize} label={item.label}
+          >
+            <DockIcon>{item.icon}</DockIcon>
+            <DockLabel>{item.label}</DockLabel>
+          </DockItem>
+        ))}
+      </motion.div>
+    </motion.div>
+  );
+}`;
+
       case 'animated-list':
-        return `/* Source from AnimatedList.tsx */`;
+        return `import React, { useRef, useState, useEffect, useCallback, ReactNode, MouseEventHandler, UIEvent } from 'react';
+import { motion, useInView } from 'framer-motion';
+import './AnimatedList.css';
+
+const AnimatedItem: React.FC<{ children: ReactNode; delay?: number; index: number; onMouseEnter?: MouseEventHandler<HTMLDivElement>; onClick?: MouseEventHandler<HTMLDivElement>; }> = ({ children, delay = 0, index, onMouseEnter, onClick }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { amount: 0.5, once: false });
+  return (
+    <motion.div ref={ref} data-index={index} onMouseEnter={onMouseEnter} onClick={onClick}
+      initial={{ scale: 0.7, opacity: 0 }} animate={inView ? { scale: 1, opacity: 1 } : { scale: 0.7, opacity: 0 }}
+      transition={{ duration: 0.2, delay }} style={{ marginBottom: '1rem', cursor: 'pointer' }}
+    >{children}</motion.div>
+  );
+};
+
+interface AnimatedListProps {
+  items?: string[];
+  onItemSelect?: (item: string, index: number) => void;
+  showGradients?: boolean;
+  enableArrowNavigation?: boolean;
+  className?: string;
+  itemClassName?: string;
+  displayScrollbar?: boolean;
+  initialSelectedIndex?: number;
+}
+
+export const AnimatedList: React.FC<AnimatedListProps> = ({
+  items = ['Item 1','Item 2','Item 3','Item 4','Item 5','Item 6','Item 7','Item 8','Item 9','Item 10'],
+  onItemSelect, showGradients = true, enableArrowNavigation = true,
+  className = '', itemClassName = '', displayScrollbar = true, initialSelectedIndex = -1
+}) => {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(initialSelectedIndex);
+  const [keyboardNav, setKeyboardNav] = useState(false);
+  const [topGradientOpacity, setTopGradientOpacity] = useState(0);
+  const [bottomGradientOpacity, setBottomGradientOpacity] = useState(1);
+
+  const handleItemMouseEnter = useCallback((index: number) => setSelectedIndex(index), []);
+  const handleItemClick = useCallback((item: string, index: number) => {
+    setSelectedIndex(index);
+    onItemSelect?.(item, index);
+  }, [onItemSelect]);
+
+  const handleScroll = useCallback((e: UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target as HTMLDivElement;
+    setTopGradientOpacity(Math.min(scrollTop / 50, 1));
+    setBottomGradientOpacity(scrollHeight <= clientHeight ? 0 : Math.min((scrollHeight - scrollTop - clientHeight) / 50, 1));
+  }, []);
+
+  useEffect(() => {
+    if (!enableArrowNavigation) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) { e.preventDefault(); setKeyboardNav(true); setSelectedIndex(p => Math.min(p + 1, items.length - 1)); }
+      else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) { e.preventDefault(); setKeyboardNav(true); setSelectedIndex(p => Math.max(p - 1, 0)); }
+      else if (e.key === 'Enter' && selectedIndex >= 0) { e.preventDefault(); onItemSelect?.(items[selectedIndex], selectedIndex); }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [items, selectedIndex, onItemSelect, enableArrowNavigation]);
+
+  useEffect(() => {
+    if (!keyboardNav || selectedIndex < 0 || !listRef.current) return;
+    const el = listRef.current.querySelector(\`[data-index="\${selectedIndex}"]\`) as HTMLElement | null;
+    if (el) {
+      const margin = 50;
+      const { scrollTop, clientHeight } = listRef.current;
+      if (el.offsetTop < scrollTop + margin) listRef.current.scrollTo({ top: el.offsetTop - margin, behavior: 'smooth' });
+      else if (el.offsetTop + el.offsetHeight > scrollTop + clientHeight - margin)
+        listRef.current.scrollTo({ top: el.offsetTop + el.offsetHeight - clientHeight + margin, behavior: 'smooth' });
+    }
+    setKeyboardNav(false);
+  }, [selectedIndex, keyboardNav]);
+
+  return (
+    <div className={\`scroll-list-container \${className}\`}>
+      <div ref={listRef} className={\`scroll-list \${!displayScrollbar ? 'no-scrollbar' : ''}\`} onScroll={handleScroll}>
+        {items.map((item, index) => (
+          <AnimatedItem key={index} delay={0.1} index={index}
+            onMouseEnter={() => handleItemMouseEnter(index)}
+            onClick={() => handleItemClick(item, index)}
+          >
+            <div className={\`item \${selectedIndex === index ? 'selected' : ''} \${itemClassName}\`}>
+              <p className="item-text">{item}</p>
+            </div>
+          </AnimatedItem>
+        ))}
+      </div>
+      {showGradients && (
+        <>
+          <div className="top-gradient" style={{ opacity: topGradientOpacity }} />
+          <div className="bottom-gradient" style={{ opacity: bottomGradientOpacity }} />
+        </>
+      )}
+    </div>
+  );
+};
+
+export default AnimatedList;`;
+
       case 'scroll-stack':
-        return `/* Source from ScrollStack.tsx */`;
+        return `import React, { useLayoutEffect, useRef, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import Lenis from 'lenis';
+import './ScrollStack.css';
+
+export interface ScrollStackItemProps { itemClassName?: string; children: ReactNode; }
+
+export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({ children, itemClassName = '' }) => (
+  <div className={\`scroll-stack-card \${itemClassName}\`.trim()}>{children}</div>
+);
+
+interface ScrollStackProps {
+  className?: string; children: ReactNode;
+  itemDistance?: number; itemScale?: number; itemStackDistance?: number;
+  stackPosition?: string; scaleEndPosition?: string; baseScale?: number;
+  scaleDuration?: number; rotationAmount?: number; blurAmount?: number;
+  useWindowScroll?: boolean; onStackComplete?: () => void;
+}
+
+const ScrollStack: React.FC<ScrollStackProps> = ({
+  children, className = '', itemDistance = 100, itemScale = 0.03,
+  itemStackDistance = 30, stackPosition = '20%', scaleEndPosition = '10%',
+  baseScale = 0.85, scaleDuration = 0.5, rotationAmount = 0, blurAmount = 0,
+  useWindowScroll = false, onStackComplete
+}) => {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const stackCompletedRef = useRef(false);
+  const animationFrameRef = useRef<number | null>(null);
+  const lenisRef = useRef<Lenis | null>(null);
+  const cardsRef = useRef<HTMLElement[]>([]);
+  const lastTransformsRef = useRef(new Map<number, any>());
+  const isUpdatingRef = useRef(false);
+
+  const calculateProgress = useCallback((s: number, start: number, end: number) =>
+    s < start ? 0 : s > end ? 1 : (s - start) / (end - start), []);
+
+  const parsePercentage = useCallback((v: string | number, h: number) =>
+    typeof v === 'string' && v.includes('%') ? (parseFloat(v) / 100) * h : parseFloat(v as string), []);
+
+  const getScrollData = useCallback(() =>
+    useWindowScroll
+      ? { scrollTop: window.scrollY, containerHeight: window.innerHeight, scrollContainer: document.documentElement }
+      : { scrollTop: scrollerRef.current!.scrollTop, containerHeight: scrollerRef.current!.clientHeight, scrollContainer: scrollerRef.current! }
+  , [useWindowScroll]);
+
+  const getElementOffset = useCallback((el: HTMLElement) =>
+    useWindowScroll ? el.getBoundingClientRect().top + window.scrollY : el.offsetTop
+  , [useWindowScroll]);
+
+  const updateCardTransforms = useCallback(() => {
+    if (!cardsRef.current.length || isUpdatingRef.current) return;
+    isUpdatingRef.current = true;
+    const { scrollTop, containerHeight } = getScrollData();
+    const stackPx = parsePercentage(stackPosition, containerHeight);
+    const scaleEndPx = parsePercentage(scaleEndPosition, containerHeight);
+    const endEl = (useWindowScroll
+      ? document.querySelector('.scroll-stack-end')
+      : scrollerRef.current?.querySelector('.scroll-stack-end')) as HTMLElement;
+    const endTop = endEl ? getElementOffset(endEl) : 0;
+
+    cardsRef.current.forEach((card, i) => {
+      if (!card) return;
+      const cardTop = getElementOffset(card);
+      const triggerStart = cardTop - stackPx - itemStackDistance * i;
+      const scaleProgress = calculateProgress(scrollTop, triggerStart, cardTop - scaleEndPx);
+      const scale = 1 - scaleProgress * (1 - (baseScale + i * itemScale));
+      const rotation = rotationAmount ? i * rotationAmount * scaleProgress : 0;
+      let blur = 0;
+      if (blurAmount) {
+        let top = 0;
+        cardsRef.current.forEach((c, j) => { if (scrollTop >= getElementOffset(c) - stackPx - itemStackDistance * j) top = j; });
+        if (i < top) blur = Math.max(0, (top - i) * blurAmount);
+      }
+      const pinStart = triggerStart, pinEnd = endTop - containerHeight / 2;
+      const isPinned = scrollTop >= pinStart && scrollTop <= pinEnd;
+      let translateY = 0;
+      if (isPinned) translateY = scrollTop - cardTop + stackPx + itemStackDistance * i;
+      else if (scrollTop > pinEnd) translateY = pinEnd - cardTop + stackPx + itemStackDistance * i;
+      card.style.transform = \`translate3d(0, \${translateY}px, 0) scale(\${Math.round(scale * 1000) / 1000}) rotate(\${rotation}deg)\`;
+      card.style.filter = blur > 0 ? \`blur(\${blur}px)\` : '';
+    });
+    isUpdatingRef.current = false;
+  }, [itemScale, itemStackDistance, stackPosition, scaleEndPosition, baseScale, rotationAmount, blurAmount, useWindowScroll, calculateProgress, parsePercentage, getScrollData, getElementOffset]);
+
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const cards = Array.from(useWindowScroll ? document.querySelectorAll('.scroll-stack-card') : scroller.querySelectorAll('.scroll-stack-card')) as HTMLElement[];
+    cardsRef.current = cards;
+    cards.forEach((card, i) => {
+      if (i < cards.length - 1) card.style.marginBottom = \`\${itemDistance}px\`;
+      card.style.willChange = 'transform, filter';
+      card.style.transformOrigin = 'top center';
+    });
+    const lenis = new Lenis({
+      wrapper: useWindowScroll ? undefined : scroller,
+      content: useWindowScroll ? undefined : scroller.querySelector('.scroll-stack-inner') as HTMLElement,
+      duration: 1.2, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true, lerp: 0.1
+    });
+    lenis.on('scroll', updateCardTransforms);
+    const raf = (t: number) => { lenis.raf(t); animationFrameRef.current = requestAnimationFrame(raf); };
+    animationFrameRef.current = requestAnimationFrame(raf);
+    lenisRef.current = lenis;
+    updateCardTransforms();
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      lenisRef.current?.destroy();
+      cardsRef.current = [];
+      lastTransformsRef.current.clear();
+    };
+  }, [itemDistance, itemScale, itemStackDistance, stackPosition, scaleEndPosition, baseScale, scaleDuration, rotationAmount, blurAmount, useWindowScroll, updateCardTransforms]);
+
+  return (
+    <div className={\`scroll-stack-scroller \${className}\`.trim()} ref={scrollerRef}>
+      <div className="scroll-stack-inner">
+        {children}
+        <div className="scroll-stack-end" />
+      </div>
+    </div>
+  );
+};
+
+export default ScrollStack;`;
+
       case 'bubble-menu':
-        return `/* Source from BubbleMenu.tsx */`;
+        return `import type { CSSProperties, ReactNode } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { gsap } from 'gsap';
+import './BubbleMenu.css';
+
+type MenuItem = {
+  label: string; href: string; ariaLabel?: string;
+  rotation?: number; hoverStyles?: { bgColor?: string; textColor?: string; };
+};
+
+export type BubbleMenuProps = {
+  logo: ReactNode | string; onMenuClick?: (open: boolean) => void;
+  className?: string; style?: CSSProperties; menuAriaLabel?: string;
+  menuBg?: string; menuContentColor?: string; useFixedPosition?: boolean;
+  items?: MenuItem[]; animationEase?: string;
+  animationDuration?: number; staggerDelay?: number;
+};
+
+const DEFAULT_ITEMS: MenuItem[] = [
+  { label: 'home', href: '#', rotation: -8, hoverStyles: { bgColor: '#3b82f6', textColor: '#ffffff' } },
+  { label: 'about', href: '#', rotation: 8, hoverStyles: { bgColor: '#10b981', textColor: '#ffffff' } },
+  { label: 'projects', href: '#', rotation: 8, hoverStyles: { bgColor: '#f59e0b', textColor: '#ffffff' } },
+  { label: 'contact', href: '#', rotation: -8, hoverStyles: { bgColor: '#8b5cf6', textColor: '#ffffff' } },
+];
+
+export default function BubbleMenu({
+  logo, onMenuClick, className, style, menuAriaLabel = 'Toggle menu',
+  menuBg = '#fff', menuContentColor = '#111', useFixedPosition = false,
+  items, animationEase = 'back.out(1.5)', animationDuration = 0.5, staggerDelay = 0.12
+}: BubbleMenuProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const bubblesRef = useRef<HTMLAnchorElement[]>([]);
+  const labelRefs = useRef<HTMLSpanElement[]>([]);
+  const menuItems = items?.length ? items : DEFAULT_ITEMS;
+
+  const handleToggle = () => {
+    const next = !isMenuOpen;
+    if (next) setShowOverlay(true);
+    setIsMenuOpen(next);
+    onMenuClick?.(next);
+  };
+
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    const bubbles = bubblesRef.current.filter(Boolean);
+    const labels = labelRefs.current.filter(Boolean);
+    if (!overlay || !bubbles.length) return;
+    if (isMenuOpen) {
+      gsap.set(overlay, { display: 'flex' });
+      gsap.killTweensOf([...bubbles, ...labels]);
+      gsap.set(bubbles, { scale: 0 });
+      gsap.set(labels, { y: 24, autoAlpha: 0 });
+      bubbles.forEach((b, i) => {
+        const tl = gsap.timeline({ delay: i * staggerDelay });
+        tl.to(b, { scale: 1, duration: animationDuration, ease: animationEase });
+        if (labels[i]) tl.to(labels[i], { y: 0, autoAlpha: 1, duration: animationDuration, ease: 'power3.out' }, \`-=\${animationDuration * 0.9}\`);
+      });
+    } else if (showOverlay) {
+      gsap.killTweensOf([...bubbles, ...labels]);
+      gsap.to(labels, { y: 24, autoAlpha: 0, duration: 0.2 });
+      gsap.to(bubbles, { scale: 0, duration: 0.2, onComplete: () => { gsap.set(overlay, { display: 'none' }); setShowOverlay(false); } });
+    }
+  }, [isMenuOpen, showOverlay, animationEase, animationDuration, staggerDelay]);
+
+  const NavBar = () => (
+    <nav className={['bubble-menu', useFixedPosition ? 'fixed' : 'absolute', className].filter(Boolean).join(' ')} style={style} aria-label="Main navigation">
+      <div className="bubble logo-bubble" style={{ background: menuBg }}>
+        <span className="logo-content">{typeof logo === 'string' ? <img src={logo} alt="Logo" className="bubble-logo" /> : logo}</span>
+      </div>
+      <button type="button" className={\`bubble toggle-bubble menu-btn \${isMenuOpen ? 'open' : ''}\`}
+        onClick={handleToggle} style={{ background: menuBg }}>
+        <span className="menu-line" style={{ background: menuContentColor }} />
+        <span className="menu-line" style={{ background: menuContentColor }} />
+      </button>
+    </nav>
+  );
+
+  const Overlay = () => showOverlay ? (
+    <div ref={overlayRef} className={\`bubble-menu-items \${useFixedPosition ? 'fixed' : 'absolute'}\`} aria-hidden={!isMenuOpen}>
+      <ul className="pill-list" role="menu">
+        {menuItems.map((item, idx) => (
+          <li key={idx} role="none" className="pill-col">
+            <a role="menuitem" href={item.href} className="pill-link"
+              style={{ '--item-rot': \`\${item.rotation ?? 0}deg\`, '--pill-bg': menuBg, '--pill-color': menuContentColor, '--hover-bg': item.hoverStyles?.bgColor || '#f3f4f6', '--hover-color': item.hoverStyles?.textColor || menuContentColor } as CSSProperties}
+              ref={el => { if (el) bubblesRef.current[idx] = el; }}>
+              <span className="pill-label" ref={el => { if (el) labelRefs.current[idx] = el; }}>{item.label}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
+
+  if (!useFixedPosition) {
+    return (
+      <div className={['bubble-menu-root', className].filter(Boolean).join(' ')} style={style}>
+        <NavBar />
+        <Overlay />
+      </div>
+    );
+  }
+  return (<><NavBar /><Overlay /></>);
+}`;
+
       case 'magic-bento':
-        return `/* Source from MagicBento.tsx */`;
+        return `// MagicBento.tsx — abbreviated for readability.
+// Full source: components/ui/MagicBento.tsx
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { gsap } from 'gsap';
+import './MagicBento.css';
+
+export interface BentoProps {
+  textAutoHide?: boolean; enableStars?: boolean; enableSpotlight?: boolean;
+  enableBorderGlow?: boolean; disableAnimations?: boolean;
+  spotlightRadius?: number; particleCount?: number;
+  enableTilt?: boolean; glowColor?: string;
+  clickEffect?: boolean; enableMagnetism?: boolean;
+}
+
+export const MagicBento: React.FC<BentoProps> = ({
+  textAutoHide = true, enableStars = true, enableSpotlight = true,
+  enableBorderGlow = true, disableAnimations = false, spotlightRadius = 300,
+  particleCount = 12, enableTilt = false, glowColor = '132, 0, 255',
+  clickEffect = true, enableMagnetism = true
+}) => {
+  const gridRef = useRef<HTMLDivElement>(null);
+  // ... full implementation in components/ui/MagicBento.tsx
+  return (
+    <div className="card-grid bento-section" ref={gridRef}>
+      {/* Card grid renders here */}
+    </div>
+  );
+};
+
+export default MagicBento;`;
+
       case 'strands':
-        return `/* Source from Strands.tsx */`;
+        return `import { Renderer, Program, Mesh, Color, Triangle, RenderTarget } from 'ogl';
+import { useEffect, useRef, CSSProperties } from 'react';
+import './Strands.css';
+
+export interface StrandsProps {
+  colors?: string[]; count?: number; speed?: number; amplitude?: number;
+  waviness?: number; thickness?: number; glow?: number; taper?: number;
+  spread?: number; hueShift?: number; intensity?: number; saturation?: number;
+  opacity?: number; scale?: number; glass?: boolean; refraction?: number;
+  dispersion?: number; glassSize?: number; className?: string; style?: CSSProperties;
+}
+
+export default function Strands({
+  colors = ['#FF4242', '#7C3AED', '#06B6D4', '#EAB308'],
+  count = 3, speed = 0.5, amplitude = 1, waviness = 1, thickness = 0.7,
+  glow = 2.6, taper = 3, spread = 1, hueShift = 0, intensity = 0.6,
+  saturation = 1.5, opacity = 1, scale = 1.5, glass = false,
+  refraction = 1, dispersion = 1, glassSize = 1, className = '', style
+}: StrandsProps) {
+  const ctnDom = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctn = ctnDom.current;
+    if (!ctn) return;
+    // WebGL renderer setup via OGL
+    const renderer = new Renderer({ alpha: true, premultipliedAlpha: true, antialias: true });
+    const gl = renderer.gl;
+    gl.clearColor(0, 0, 0, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    // ... GLSL shaders + render loop
+    // Full source: components/ui/Strands.tsx
+    return () => { /* cleanup */ };
+  }, []);
+
+  return <div ref={ctnDom} className={\`strands-container \${className}\`} style={style} />;
+}`;
+
       case 'magnet':
-        return `/* Source from Magnet.tsx */`;
+        return `import React, { useState, useEffect, useRef, ReactNode, HTMLAttributes } from 'react';
+
+interface MagnetProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  padding?: number;
+  disabled?: boolean;
+  magnetStrength?: number;
+  activeTransition?: string;
+  inactiveTransition?: string;
+  wrapperClassName?: string;
+  innerClassName?: string;
+}
+
+export const Magnet: React.FC<MagnetProps> = ({
+  children, padding = 100, disabled = false, magnetStrength = 2,
+  activeTransition = 'transform 0.3s ease-out',
+  inactiveTransition = 'transform 0.5s ease-in-out',
+  wrapperClassName = '', innerClassName = '', ...props
+}) => {
+  const [isActive, setIsActive] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const magnetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (disabled) { setPosition({ x: 0, y: 0 }); return; }
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!magnetRef.current) return;
+      const { left, top, width, height } = magnetRef.current.getBoundingClientRect();
+      const centerX = left + width / 2;
+      const centerY = top + height / 2;
+      if (Math.abs(centerX - e.clientX) < width / 2 + padding && Math.abs(centerY - e.clientY) < height / 2 + padding) {
+        setIsActive(true);
+        setPosition({ x: (e.clientX - centerX) / magnetStrength, y: (e.clientY - centerY) / magnetStrength });
+      } else {
+        setIsActive(false);
+        setPosition({ x: 0, y: 0 });
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [padding, disabled, magnetStrength]);
+
+  return (
+    <div ref={magnetRef} className={wrapperClassName} style={{ position: 'relative', display: 'inline-block' }} {...props}>
+      <div className={innerClassName} style={{
+        transform: \`translate3d(\${position.x}px, \${position.y}px, 0)\`,
+        transition: isActive ? activeTransition : inactiveTransition,
+        willChange: 'transform'
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+export default Magnet;`;
+
+      case 'sparkle-button':
+        return `import React from 'react';
+import './SparkleButton.css';
+
+export const SparkleButton: React.FC = () => {
+  return (
+    <div className="sp">
+      <button className="sparkle-button">
+        <span className="spark" />
+        <span className="backdrop" />
+        <svg className="sparkle" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14.187 8.096L15 5.25L15.813 8.096C16.0231 8.83114 16.4171 9.50062 16.9577 10.0413C17.4984 10.5819 18.1679 10.9759 18.903 11.186L21.75 12L18.904 12.813C18.1689 13.0231 17.4994 13.4171 16.9587 13.9577C16.4181 14.4984 16.0241 15.1679 15.814 15.903L15 18.75L14.187 15.904C13.9769 15.1689 13.5829 14.4994 13.0423 13.9587C12.5016 13.4181 11.8321 13.0241 11.097 12.814L8.25 12L11.096 11.187C11.8311 10.9769 12.5006 10.5829 13.0413 10.0423C13.5819 9.50162 13.9759 8.83214 14.186 8.097L14.187 8.096Z" fill="black" stroke="black" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6 14.25L5.741 15.285C5.59267 15.8785 5.28579 16.4206 4.85319 16.8532C4.42059 17.2858 3.87853 17.5927 3.285 17.741L2.25 18L3.285 18.259C3.87853 18.4073 4.42059 18.7142 4.85319 19.1468C5.28579 19.5794 5.59267 20.1215 5.741 20.715L6 21.75L6.259 20.715C6.40725 20.1216 6.71398 19.5796 7.14639 19.147C7.5788 18.7144 8.12065 18.4075 8.714 18.259L9.75 18L8.714 17.741C8.12065 17.5925 7.5788 17.2856 7.14639 16.853C6.71398 16.4204 6.40725 15.8784 6.259 15.285L6 14.25Z" fill="black" stroke="black" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6.5 4L6.303 4.5915C6.24777 4.75718 6.15472 4.90774 6.03123 5.03123C5.90774 5.15472 5.75718 5.24777 5.5915 5.303L5 5.5L5.5915 5.697C5.75718 5.75223 5.90774 5.84528 6.03123 5.96877C6.15472 6.09226 6.24777 6.24282 6.303 6.4085L6.5 7L6.697 6.4085C6.75223 6.24282 6.84528 6.09226 6.96877 5.96877C7.09226 5.84528 7.24282 5.75223 7.4085 5.697L8 5.5L7.4085 5.303C7.24282 5.24777 7.09226 5.15472 6.96877 5.03123C6.84528 4.90774 6.75223 4.75718 6.697 4.5915L6.5 4Z" fill="black" stroke="black" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span className="text">Generate Site</span>
+      </button>
+      <div className="bodydrop" />
+      <span aria-hidden="true" className="particle-pen">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <svg key={i} className="particle" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style={{ '--x': \`\${10 + Math.random() * 80}\`, '--y': \`\${10 + Math.random() * 80}\`, '--delay': \`\${Math.random() * -10}\`, '--duration': \`\${2 + Math.random() * 4}\`, '--size': \`\${0.1 + Math.random() * 0.35}\`, '--alpha': \`\${0.3 + Math.random() * 0.7}\` } as React.CSSProperties}
+          >
+            <path d="M6.937 3.846L7.75 1L8.563 3.846C8.77313 4.58114 9.1671 5.25062 9.70774 5.79126C10.2484 6.3319 10.9179 6.72587 11.653 6.936L14.5 7.75L11.654 8.563C10.9189 8.77313 10.2494 9.1671 9.70874 9.70774C9.1681 10.2484 8.77413 10.9179 8.564 11.653L7.75 14.5L6.937 11.654C6.72687 10.9189 6.3329 10.2494 5.79226 9.70874C5.25162 9.1681 4.58214 8.77413 3.847 8.564L1 7.75L3.846 6.937C4.58114 6.72687 5.25062 6.3329 5.79126 5.79226C6.3319 5.25162 6.72587 4.58214 6.936 3.847L6.937 3.846Z" fill="black" stroke="black" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ))}
+      </span>
+    </div>
+  );
+};
+
+export default SparkleButton;`;
+
+      case 'japanese-matrix':
+        return `import React from 'react';
+import './JapaneseMatrix.css';
+
+const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ';
+
+export const JapaneseMatrix: React.FC = () => {
+  const spans = Array.from({ length: 150 }).map((_, i) => {
+    const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+    return <span key={i}>{char}</span>;
+  });
+  return (
+    <div className="jp-matrix-wrapper">
+      <div className="jp-matrix">{spans}</div>
+    </div>
+  );
+};
+
+export default JapaneseMatrix;`;
+
+      case 'back-to-top':
+        return `import React from 'react';
+import './BackToTop.css';
+
+export const BackToTop: React.FC = () => {
+  return (
+    <button className="back-to-top-button">
+      <svg className="svgIcon" viewBox="0 0 384 512">
+        <path d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 141.2V448c0 17.7 14.3 32 32 32s32-14.3 32-32V141.2L329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z" />
+      </svg>
+    </button>
+  );
+};
+
+export default BackToTop;`;
+
+      case 'glass-app-buttons':
+        return `import React from 'react';
+
+export const GlassAppButtons: React.FC = () => {
+  return (
+    <div className="grid grid-cols-2 gap-6 max-w-sm mx-auto p-4 select-none">
+      {/* Apple App Store */}
+      <button className="p-5 rounded-full backdrop-blur-lg border border-white/10 bg-gradient-to-tr from-black/60 to-black/40 shadow-lg hover:shadow-2xl hover:shadow-white/20 hover:scale-110 hover:rotate-3 active:scale-95 transition-all duration-300 cursor-pointer group relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+        <div className="relative z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-7 h-7 fill-current text-white">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.21.67-2.93 1.49-.62.69-1.16 1.84-1.01 2.96 1.12.09 2.27-.57 2.95-1.39z"/>
+          </svg>
+        </div>
+      </button>
+      {/* Spotify */}
+      <button className="p-5 rounded-full backdrop-blur-lg border border-green-500/20 bg-gradient-to-tr from-black/60 to-black/40 shadow-lg hover:shadow-2xl hover:shadow-green-500/30 hover:scale-110 hover:rotate-2 active:scale-95 transition-all duration-300 cursor-pointer group relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+        <div className="relative z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" className="w-7 h-7 text-green-500 fill-current">
+            <path d="M248 8C111.1 8 0 119.1 0 256s111.1 248 248 248 248-111.1 248-248S384.9 8 248 8zm100.7 364.9c-4.2 0-6.8-1.3-10.7-3.6-62.4-37.6-135-39.2-206.7-24.5-3.9 1-9 2.6-11.9 2.6-9.7 0-15.8-7.7-15.8-15.8 0-10.3 6.1-15.2 13.6-16.8 81.9-18.1 165.6-16.5 237 30.2 6.1 3.9 9.7 7.4 9.7 16.5s-7.1 15.4-15.2 15.4z" />
+          </svg>
+        </div>
+      </button>
+    </div>
+  );
+};
+
+export default GlassAppButtons;`;
       case 'fluid-glass':
         return `import * as THREE from 'three';
 import { useRef, useState, useEffect, memo, ReactNode } from 'react';
