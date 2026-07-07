@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, Code, RotateCcw, Heart, Copy, Check, Sparkles, RefreshCw, Type, Sliders, Play } from 'lucide-react';
+import { Eye, Code, RotateCcw, Heart, Copy, Check, Sparkles, RefreshCw, Type, Sliders, Play, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // TYPES
@@ -668,6 +668,11 @@ export default function TextAnimationsPage() {
   const activeConfig = ANIMATIONS.find(a => a.id === activeAnimId) || ANIMATIONS[0];
   const [customText, setCustomText] = useState<string>(activeConfig.defaultText);
   const [controlValues, setControlValues] = useState<Record<string, any>>({});
+  const [scrollTexts, setScrollTexts] = useState<string[]>([
+    'ONYX WORKSPACE UTILITIES',
+    'SPEED BANNERS',
+    'REACT COMPONENTS'
+  ]);
 
   // Reset values when switching animations
   useEffect(() => {
@@ -694,6 +699,11 @@ export default function TextAnimationsPage() {
     });
     setControlValues(defaultValues);
     setCustomText(activeConfig.defaultText);
+    setScrollTexts([
+      'ONYX WORKSPACE UTILITIES',
+      'SPEED BANNERS',
+      'REACT COMPONENTS'
+    ]);
     setTriggerKey(prev => prev + 1);
     showToastNotification('Animation parameters reset');
   };
@@ -731,6 +741,11 @@ export default function TextAnimationsPage() {
   // SOURCE CODE GENERATOR
   const generateSourceCode = (): string => {
     if (exportTab === 'usage') {
+      const isScrollVelocity = activeAnimId === 'scroll-velocity';
+      const textProp = isScrollVelocity
+        ? `texts={${JSON.stringify(scrollTexts)}}`
+        : `text="${customText}"`;
+
       return `import React from 'react';
 import ${activeConfig.name.replace(/\s+/g, '')} from './${activeConfig.name.replace(/\s+/g, '')}';
 
@@ -738,7 +753,7 @@ export default function Demo() {
   return (
     <div className="flex items-center justify-center min-h-[300px] bg-black text-white p-6">
       <${activeConfig.name.replace(/\s+/g, '')} 
-        text="${customText}"
+        ${textProp}
         ${Object.entries(controlValues)
           .map(([k, v]) => `${k}={${typeof v === 'string' ? `"${v}"` : v}}`)
           .join('\n        ')}
@@ -905,6 +920,40 @@ export default function CircularText({
           to { transform: rotate(360deg); }
         }
       \`}</style>
+    </div>
+  );
+}`;
+
+      case 'scroll-velocity':
+        return `import React from 'react';
+import { motion } from 'framer-motion';
+
+export default function ScrollVelocity({
+  texts = ${JSON.stringify(scrollTexts)},
+  velocity = ${controlValues.velocity || 15}
+}) {
+  const repeatCount = Math.max(4, Math.ceil(12 / texts.length));
+
+  return (
+    <div className="w-full overflow-hidden border-y border-zinc-900 py-3 bg-zinc-950/20 select-none">
+      <motion.div
+        className="flex whitespace-nowrap gap-8 text-xl sm:text-2xl font-mono uppercase font-bold text-white w-max"
+        animate={{ x: velocity > 0 ? [0, -400] : [-400, 0] }}
+        transition={{
+          repeat: Infinity,
+          duration: Math.max(1.5, 120 / Math.abs(velocity || 1)),
+          ease: 'linear'
+        }}
+      >
+        {Array.from({ length: repeatCount }).flatMap((_, i) =>
+          texts.map((txt, j) => (
+            <span key={\`\${i}-\${j}\`} className="flex items-center gap-4">
+              <span>{txt || ' '}</span>
+              <span className="text-violet-500">•</span>
+            </span>
+          ))
+        )}
+      </motion.div>
     </div>
   );
 }`;
@@ -1484,24 +1533,27 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}({
 
       case 'scroll-velocity': {
         const velocity = controlValues.velocity || 15;
+        const repeatCount = Math.max(4, Math.ceil(12 / scrollTexts.length));
 
         return (
           <div className="w-full overflow-hidden border-y border-zinc-900 py-3 bg-zinc-950/20 select-none">
             <motion.div
-              className="flex whitespace-nowrap gap-8 text-xl sm:text-2xl font-mono uppercase font-bold text-white"
-              animate={{ x: velocity > 0 ? [0, -300] : [-300, 0] }}
+              className="flex whitespace-nowrap gap-8 text-xl sm:text-2xl font-mono uppercase font-bold text-white w-max"
+              animate={{ x: velocity > 0 ? [0, -400] : [-400, 0] }}
               transition={{
                 repeat: Infinity,
-                duration: Math.max(1, 100 / Math.abs(velocity || 1)),
+                duration: Math.max(1.5, 120 / Math.abs(velocity || 1)),
                 ease: 'linear'
               }}
             >
-              {Array.from({ length: 8 }).map((_, i) => (
-                <span key={i} className="flex items-center gap-4">
-                  <span>{text}</span>
-                  <span className="text-violet-500">•</span>
-                </span>
-              ))}
+              {Array.from({ length: repeatCount }).flatMap((_, i) =>
+                scrollTexts.map((txt, j) => (
+                  <span key={`${i}-${j}`} className="flex items-center gap-4">
+                    <span>{txt || ' '}</span>
+                    <span className="text-violet-500">•</span>
+                  </span>
+                ))
+              )}
             </motion.div>
           </div>
         );
@@ -1681,19 +1733,68 @@ export default function ${activeConfig.name.replace(/\s+/g, '')}({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-              {/* Dynamic Text Input Field */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-wider">
-                  Test Text Input
-                </label>
-                <input
-                  type="text"
-                  value={customText}
-                  onChange={(e) => setCustomText(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono text-white rounded bg-zinc-900 border border-zinc-800 focus:outline-none focus:border-zinc-700"
-                  placeholder="Type preview text..."
-                />
-              </div>
+              {/* Dynamic Text Input / Multiple Inputs for Scroll Velocity */}
+              {activeAnimId === 'scroll-velocity' ? (
+                <div className="flex flex-col gap-3 md:col-span-2">
+                  <label className="text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-wider flex justify-between items-center">
+                    <span>Banner Messages</span>
+                    <button
+                      type="button"
+                      onClick={() => setScrollTexts(prev => [...prev, 'NEW MESSAGE'])}
+                      className="px-2 py-0.5 rounded border border-zinc-800 hover:border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-[9px] font-mono text-zinc-300 hover:text-white cursor-pointer transition-colors"
+                    >
+                      + Add Message
+                    </button>
+                  </label>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-40 overflow-y-auto pr-1">
+                    {scrollTexts.map((txt, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5 bg-zinc-950/60 p-1.5 rounded border border-zinc-900">
+                        <input
+                          type="text"
+                          value={txt}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setScrollTexts(prev => {
+                              const copy = [...prev];
+                              copy[idx] = val;
+                              return copy;
+                            });
+                          }}
+                          className="flex-1 min-w-0 px-2 py-1 text-[11px] font-mono text-white rounded bg-zinc-900 border border-zinc-800 focus:outline-none focus:border-zinc-700"
+                          placeholder={`Message #${idx + 1}...`}
+                        />
+                        {scrollTexts.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setScrollTexts(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="p-1 border border-zinc-900 hover:border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-rose-400 rounded cursor-pointer transition-colors"
+                            title="Remove message"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* Dynamic Text Input Field */
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-wider">
+                    Test Text Input
+                  </label>
+                  <input
+                    type="text"
+                    value={customText}
+                    onChange={(e) => setCustomText(e.target.value)}
+                    className="w-full px-3 py-2 text-xs font-mono text-white rounded bg-zinc-900 border border-zinc-800 focus:outline-none focus:border-zinc-700"
+                    placeholder="Type preview text..."
+                  />
+                </div>
+              )}
 
               {/* Auto Render Config Controls */}
               {activeConfig.controls.map(field => {
