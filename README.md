@@ -57,15 +57,6 @@ Onyx Tools ships six production-ready studios. Each tool operates independently 
 | **Text Animations** | Preview, customize, and export high-performance React text animation components. Multiple animation patterns with live controls. | Design | `T` |
 | **Components** | Preview, configure, and export interactive React UI components. Live parameter panel with source code and CSS export. | Design | `D` |
 
-### Coming Soon
-
-| Tool | Description | Status |
-|---|---|---|
-| Image Optimizer | Client-side PNG/WebP compression without upload | Planned |
-| Font Pairing | Visual type-scale and pairing preview system | Planned |
-| Gradient Builder | Advanced mesh gradient editor with CSS export | Planned |
-| SVG Editor | Inline SVG manipulation and optimization | Planned |
-
 ---
 
 ## Architecture
