@@ -54,7 +54,14 @@ uniform bool parallax;
 uniform float parallaxStrength;
 uniform vec2 parallaxOffset;
 
-uniform vec3 lineGradient[8];
+uniform vec3 lineGradient0;
+uniform vec3 lineGradient1;
+uniform vec3 lineGradient2;
+uniform vec3 lineGradient3;
+uniform vec3 lineGradient4;
+uniform vec3 lineGradient5;
+uniform vec3 lineGradient6;
+uniform vec3 lineGradient7;
 uniform int lineGradientCount;
 
 const vec3 BLACK = vec3(0.0);
@@ -77,15 +84,15 @@ vec3 background_color(vec2 uv) {
 }
 
 vec3 getGradientStop(int index) {
-  if (index == 0) return lineGradient[0];
-  if (index == 1) return lineGradient[1];
-  if (index == 2) return lineGradient[2];
-  if (index == 3) return lineGradient[3];
-  if (index == 4) return lineGradient[4];
-  if (index == 5) return lineGradient[5];
-  if (index == 6) return lineGradient[6];
-  if (index == 7) return lineGradient[7];
-  return lineGradient[0];
+  if (index == 0) return lineGradient0;
+  if (index == 1) return lineGradient1;
+  if (index == 2) return lineGradient2;
+  if (index == 3) return lineGradient3;
+  if (index == 4) return lineGradient4;
+  if (index == 5) return lineGradient5;
+  if (index == 6) return lineGradient6;
+  if (index == 7) return lineGradient7;
+  return lineGradient0;
 }
 
 vec3 getLineColor(float t, vec3 baseColor) {
@@ -151,7 +158,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   
   if (enableBottom) {
     for (int i = 0; i < 16; ++i) {
-      if (i >= bottomLineCount) break;
+      float activeFactor = i < bottomLineCount ? 1.0 : 0.0;
       float fi = float(i);
       float t = fi / max(float(bottomLineCount - 1), 1.0);
       vec3 lineCol = getLineColor(t, b);
@@ -164,13 +171,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         baseUv,
         mouseUv,
         interactive
-      ) * 0.2;
+      ) * 0.2 * activeFactor;
     }
   }
 
   if (enableMiddle) {
     for (int i = 0; i < 16; ++i) {
-      if (i >= middleLineCount) break;
+      float activeFactor = i < middleLineCount ? 1.0 : 0.0;
       float fi = float(i);
       float t = fi / max(float(middleLineCount - 1), 1.0);
       vec3 lineCol = getLineColor(t, b);
@@ -183,13 +190,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         baseUv,
         mouseUv,
         interactive
-      );
+      ) * activeFactor;
     }
   }
 
   if (enableTop) {
     for (int i = 0; i < 16; ++i) {
-      if (i >= topLineCount) break;
+      float activeFactor = i < topLineCount ? 1.0 : 0.0;
       float fi = float(i);
       float t = fi / max(float(topLineCount - 1), 1.0);
       vec3 lineCol = getLineColor(t, b);
@@ -203,7 +210,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         baseUv,
         mouseUv,
         interactive
-      ) * 0.1;
+      ) * 0.1 * activeFactor;
     }
   }
 
@@ -377,9 +384,14 @@ export default function FloatingLines({
       parallaxStrength: { value: parallaxStrength },
       parallaxOffset: { value: new Vector2(0, 0) },
 
-      lineGradient: {
-        value: Array.from({ length: MAX_GRADIENT_STOPS }, () => new Vector3(1, 1, 1))
-      },
+      lineGradient0: { value: new Vector3(1, 1, 1) },
+      lineGradient1: { value: new Vector3(1, 1, 1) },
+      lineGradient2: { value: new Vector3(1, 1, 1) },
+      lineGradient3: { value: new Vector3(1, 1, 1) },
+      lineGradient4: { value: new Vector3(1, 1, 1) },
+      lineGradient5: { value: new Vector3(1, 1, 1) },
+      lineGradient6: { value: new Vector3(1, 1, 1) },
+      lineGradient7: { value: new Vector3(1, 1, 1) },
       lineGradientCount: { value: 0 }
     };
 
@@ -389,7 +401,7 @@ export default function FloatingLines({
 
       stops.forEach((hex, i) => {
         const color = hexToVec3(hex);
-        uniforms.lineGradient.value[i].set(color.x, color.y, color.z);
+        (uniforms as any)[`lineGradient${i}`].value.copy(color);
       });
     }
 
@@ -540,7 +552,7 @@ export default function FloatingLines({
       u.lineGradientCount.value = stops.length;
       stops.forEach((hex, i) => {
         const color = hexToVec3(hex);
-        u.lineGradient.value[i].set(color.x, color.y, color.z);
+        u[`lineGradient${i}`].value.copy(color);
       });
     } else {
       u.lineGradientCount.value = 0;
