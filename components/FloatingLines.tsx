@@ -76,29 +76,40 @@ vec3 background_color(vec2 uv) {
   return col * 0.5;
 }
 
+vec3 getGradientStop(int index) {
+  if (index == 0) return lineGradient[0];
+  if (index == 1) return lineGradient[1];
+  if (index == 2) return lineGradient[2];
+  if (index == 3) return lineGradient[3];
+  if (index == 4) return lineGradient[4];
+  if (index == 5) return lineGradient[5];
+  if (index == 6) return lineGradient[6];
+  if (index == 7) return lineGradient[7];
+  return lineGradient[0];
+}
+
 vec3 getLineColor(float t, vec3 baseColor) {
   if (lineGradientCount <= 0) {
     return baseColor;
   }
 
-  vec3 gradientColor;
-  
   if (lineGradientCount == 1) {
-    gradientColor = lineGradient[0];
-  } else {
-    float clampedT = clamp(t, 0.0, 0.9999);
-    float scaled = clampedT * float(lineGradientCount - 1);
-    int idx = int(floor(scaled));
-    float f = fract(scaled);
-    int idx2 = min(idx + 1, lineGradientCount - 1);
-
-    vec3 c1 = lineGradient[idx];
-    vec3 c2 = lineGradient[idx2];
-    
-    gradientColor = mix(c1, c2, f);
+    return getGradientStop(0) * 0.5;
   }
+
+  float clampedT = clamp(t, 0.0, 0.9999);
+  float scaled = clampedT * float(lineGradientCount - 1);
+  int idx = int(floor(scaled));
+  float f = fract(scaled);
+  int idx2 = idx + 1;
+  if (idx2 >= lineGradientCount) {
+    idx2 = lineGradientCount - 1;
+  }
+
+  vec3 c1 = getGradientStop(idx);
+  vec3 c2 = getGradientStop(idx2);
   
-  return gradientColor * 0.5;
+  return mix(c1, c2, f) * 0.5;
 }
 
   float wave(vec2 uv, float offset, vec2 screenUv, vec2 mouseUv, bool shouldBend) {
